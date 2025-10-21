@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مؤسسة عبدالرحمن محمد الشبانة التجارية - المنتجات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #f8b500;
+            --text-color: #333;
+            --light-bg: #f9f9f9;
+            --white: #ffffff;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* شريط التنقل العلوي */
+        .top-bar {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .top-bar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--white);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .contact-top a {
+            color: var(--white);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* الهيدر الرئيسي */
+        .main-header {
+            background-color: var(--white);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-image {
+            height: 50px;
+            width: auto;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-main {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+
+        .logo-sub {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .main-nav ul {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+        }
+
+        .main-nav a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .main-nav a:hover, .main-nav a.active {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-btn, .menu-toggle {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover, .menu-toggle:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* قسم المنتجات */
+        .products-section {
+            padding: 60px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .section-title .title-ar {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .section-title .title-en {
+            font-size: 18px;
+            color: #666;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background-color: var(--secondary-color);
+        }
+
+        /* فلتر المنتجات */
+        .products-filter {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .filter-btn {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        /* شبكة المنتجات */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .product-card {
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image {
+            height: 200px;
+            width: 100%;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .product-details {
+            padding: 20px;
+        }
+
+        .product-code {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .product-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            height: 40px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .product-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .product-brand, .product-group {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .product-packing {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .view-product-btn {
+            display: block;
+            width: 100%;
+            background: var(--secondary-color);
+            color: var(--text-color);
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .view-product-btn:hover {
+            background: #e6a500;
+        }
+
+        /* حالة التحميل */
+        .products-loading {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* زر العودة للأعلى */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .scroll-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-to-top:hover {
+            background: #1e4a8a;
+        }
+
+        /* الفوتر */
+        .main-footer {
+            background: #2c3e50;
+            color: var(--white);
+            padding: 50px 0 20px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 40px;
+            height: 2px;
+            background: var(--secondary-color);
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .footer-logo img {
+            height: 40px;
+            width: auto;
+        }
+
+        .footer-description {
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: #ddd;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--secondary-color);
+        }
+
+        .newsletter-form {
+            display: flex;
+            margin-top: 15px;
+        }
+
+        .newsletter-form input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px 0 0 4px;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .newsletter-form button {
+            background: var(--secondary-color);
+            color: var(--text-color);
+            border: none;
+            padding: 0 15px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .newsletter-form button:hover {
+            background: #e6a500;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+        }
+
+        /* مودال المنتج */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1100;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: var(--white);
+            margin: 50px auto;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+            animation: modalFade 0.3s;
+        }
+
+        @keyframes modalFade {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            z-index: 1;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-image {
+            height: 300px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .modal-details {
+            padding: 30px;
+        }
+
+        .modal-details h3 {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .modal-details p {
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .product-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .spec-item {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .spec-item strong {
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+
+        /* التجاوب مع الشاشات المختلفة */
+        @media (min-width: 768px) {
+            .modal-body {
+                flex-direction: row;
+            }
+            
+            .modal-image {
+                width: 40%;
+                height: auto;
+            }
+            
+            .modal-details {
+                width: 60%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-nav {
+                display: none;
+            }
+            
+            .header-actions {
+                gap: 5px;
+            }
+            
+            .section-title .title-ar {
+                font-size: 26px;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط التنقل العلوي -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="welcome-text" data-ar="مرحباً بكم في مؤسسة الشبانة التجارية" data-en="Welcome to Al Shabana Trading Establishment">مرحباً بكم في مؤسسة الشبانة التجارية</div>
+                <div class="top-bar-actions">
+                    <button id="languageToggle" class="lang-btn">
+                        <i class="fas fa-globe"></i>
+                        <span class="lang-text">EN</span>
+                    </button>
+                    <div class="contact-top">
+                        <a href="tel:+966XXXXXXXXXX"><i class="fas fa-phone"></i> +966 XXXXXXXX</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الهيدر الرئيسي -->
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="2.png" alt="شعار مؤسسة الشبانة" class="logo-image">
+                    <div class="logo-text">
+                        <span class="logo-main" data-ar="مؤسسة الشبانة التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانة التجارية</span>
+                        <span class="logo-sub">Al Shabana Trading Establishment</span>
+                    </div>
+                </div>
+                
+                <nav class="main-nav">
+                    <ul class="nav-list">
+                        <li><a href="index.html" class="nav-link">
+                            <i class="fas fa-home"></i> 
+                            <span data-ar="الرئيسية" data-en="Home">الرئيسية</span>
+                        </a></li>
+                        <li><a href="index.html#about" class="nav-link">
+                            <i class="fas fa-building"></i> 
+                            <span data-ar="من نحن" data-en="About">من نحن</span>
+                        </a></li>
+                        <li><a href="products.html" class="nav-link active">
+                            <i class="fas fa-box-open"></i> 
+                            <span data-ar="المنتجات" data-en="Products">المنتجات</span>
+                        </a></li>
+                        <li><a href="index.html#stats" class="nav-link">
+                            <i class="fas fa-chart-bar"></i> 
+                            <span data-ar="الإحصائيات" data-en="Statistics">الإحصائيات</span>
+                        </a></li>
+                        <li><a href="index.html#brands" class="nav-link">
+                            <i class="fas fa-tags"></i> 
+                            <span data-ar="العلامات" data-en="Brands">العلامات</span>
+                        </a></li>
+                        <li><a href="index.html#contact" class="nav-link">
+                            <i class="fas fa-envelope"></i> 
+                            <span data-ar="اتصل بنا" data-en="Contact">اتصل بنا</span>
+                        </a></li>
+                    </ul>
+                </nav>
+
+                <div class="header-actions">
+                    <button class="search-btn" aria-label="بحث">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="menu-toggle" aria-label="قائمة التنقل">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- قسم المنتجات -->
+    <section id="products" class="products-section">
+        <div class="container">
+            <h2 class="section-title">
+                <span class="title-ar">منتجاتنا</span>
+                <span class="title-en">Our Products</span>
+            </h2>
+            
+            <div class="products-filter">
+                <button class="filter-btn active" data-filter="all" data-ar="الكل" data-en="All">الكل</button>
+                <button class="filter-btn" data-filter="Double Class">Double Class</button>
+                <button class="filter-btn" data-filter="Handles">Handles</button>
+                <button class="filter-btn" data-filter="Cleaning" data-ar="مواد تنظيف" data-en="Cleaning">مواد تنظيف</button>
+                <button class="filter-btn" data-filter="Energy" data-ar="طاقة" data-en="Energy">طاقة</button>
+            </div>
+            
+            <div class="products-grid" id="productsContainer">
+                <!-- سيتم تعبئة المنتجات ديناميكياً من JavaScript -->
+            </div>
+            
+            <div class="products-loading">
+                <div class="loading-spinner"></div>
+                <p data-ar="جاري تحميل المنتجات..." data-en="Loading products...">جاري تحميل المنتجات...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="2.png" alt="شعار مؤسسة الشبانة">
+                        <span data-ar="مؤسسة الشبانة التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانة التجارية</span>
+                    </div>
+                    <p class="footer-description" data-ar="شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010" data-en="Your trusted partner in providing essential household supplies since 2010">شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h3>
+                    <ul class="footer-links">
+                        <li><a href="index.html#about" data-ar="من نحن" data-en="About Us">من نحن</a></li>
+                        <li><a href="products.html" data-ar="المنتجات" data-en="Products">المنتجات</a></li>
+                        <li><a href="index.html#brands" data-ar="العلامات" data-en="Brands">العلامات</a></li>
+                        <li><a href="index.html#contact" data-ar="اتصل بنا" data-en="Contact">اتصل بنا</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="المنتجات" data-en="Products">المنتجات</h3>
+                    <ul class="footer-links">
+                        <li><a href="#" data-ar="الطاقة والوقود" data-en="Energy & Fuel">الطاقة والوقود</a></li>
+                        <li><a href="#" data-ar="تنقية المياه" data-en="Water Purification">تنقية المياه</a></li>
+                        <li><a href="#" data-ar="مواد التنظيف" data-en="Cleaning Materials">مواد التنظيف</a></li>
+                        <li><a href="#" data-ar="المستلزمات" data-en="Supplies">المستلزمات</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="اشترك في النشرة" data-en="Subscribe to Newsletter">اشترك في النشرة</h3>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="بريدك الإلكتروني" data-ar-placeholder="بريدك الإلكتروني" data-en-placeholder="Your Email" required>
+                        <button type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p data-ar="&copy; 2024 مؤسسة عبدالرحمن محمد الشبانة التجارية. جميع الحقوق محفوظة." data-en="&copy; 2024 Al Rahman Mohammed Al Shabana Trading Establishment. All rights reserved.">&copy; 2024 مؤسسة عبدالرحمن محمد الشبانة التجارية. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- مودال المنتج -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-img" src="" alt="صورة المنتج">
+                </div>
+                <div class="modal-details">
+                    <h3 id="modal-name">اسم المنتج</h3>
+                    <p id="modal-description">وصف المنتج</p>
+                    <div class="product-specs">
+                        <div class="spec-item">
+                            <strong data-ar="الكود:" data-en="Code:">الكود:</strong>
+                            <span id="modal-code"></span>
+                        </div>
+                        <div class="spec-item">
+                            <strong data-ar="المجموعة:" data-en="Group:">المجموعة:</strong>
+                            <span id="modal-group"></span>
+                        </div>
+                        <div class="spec-item">
+                            <strong data-ar="العلامة:" data-en="Brand:">العلامة:</strong>
+                            <span id="modal-brand"></span>
+                        </div>
+                        <div class="spec-item">
+                            <strong data-ar="التغليف:" data-en="Packing:">التغليف:</strong>
+                            <span id="modal-packing"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- زر العودة للأعلى -->
+    <button id="scrollToTop" class="scroll-to-top">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <script>
+        // بيانات المنتجات (يمكن استبدالها بطلب AJAX لملف JSON)
+        const productsData = {
+            "products": [
+                {
+                    "S_NO": 1,
+                    "Item_Code": "AD04",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:9x9.5x25 cm Brand: Double Class Origin: Malaysia",
+                    "Image": "AD04.jpg",
+                    "Packing": "1 X 30 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                },
+                {
+                    "S_NO": 2,
+                    "Item_Code": "AD05",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:8 W*22H 8 L Brand: Double Class Origin: Malaysia",
+                    "Image": "AD05.jpg",
+                    "Packing": "1 X 50 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                },
+                {
+                    "S_NO": 3,
+                    "Item_Code": "AD06",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:8 W*22H 8 L Brand: Double Class Origin: Malaysia",
+                    "Image": "AD06.jpg",
+                    "Packing": "1 X 50 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                },
+                {
+                    "S_NO": 4,
+                    "Item_Code": "AD07",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:8 W*22H 8 L Brand: Double Class Origin: Malaysia",
+                    "Image": "AD07.jpg",
+                    "Packing": "1 X 50 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                },
+                {
+                    "S_NO": 5,
+                    "Item_Code": "AD08",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:8 W*22H 8 L Brand: Double Class Origin: Malaysia",
+                    "Image": "AD08.jpg",
+                    "Packing": "1 X 50 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                },
+                {
+                    "S_NO": 6,
+                    "Item_Code": "AD09",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:8 W*22H 8 L Brand: Double Class Origin: Malaysia",
+                    "Image": "AD09.jpg",
+                    "Packing": "1 X 50 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                },
+                {
+                    "S_NO": 7,
+                    "Item_Code": "AD10",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:8 W*22H 8 L Brand: Double Class Origin: Malaysia",
+                    "Image": "AD10.jpg",
+                    "Packing": "1 X 50 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                },
+                {
+                    "S_NO": 8,
+                    "Item_Code": "AD11",
+                    "Item_Name": "Automatic Aerosol Dispenser Measurement:8 W*22H 8 L Brand: Double Class Origin: Malaysia",
+                    "Image": "AD11.jpg",
+                    "Packing": "1 X 50 PCS Aerosol Automatic Dispensers",
+                    "Item_Group": "Double Class",
+                    "Brand": "Double Class"
+                }
+            ]
+        };
+
+        // متغيرات التطبيق
+        let currentLanguage = 'ar';
+        let currentFilter = 'all';
+
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', function() {
+            // تحميل المنتجات
+            loadProducts();
+            
+            // إعداد التبديل بين اللغات
+            setupLanguageToggle();
+            
+            // إعداد تصفية المنتجات
+            setupProductFilter();
+            
+            // إعداد زر العودة للأعلى
+            setupScrollToTop();
+            
+            // إخفاء شاشة التحميل بعد تحميل المنتجات
+            setTimeout(() => {
+                document.querySelector('.products-loading').style.display = 'none';
+            }, 1000);
+        });
+
+        // تحميل وعرض المنتجات
+        function loadProducts() {
+            const productsContainer = document.getElementById('productsContainer');
+            productsContainer.innerHTML = '';
+            
+            productsData.products.forEach(product => {
+                if (currentFilter === 'all' || product.Item_Group === currentFilter) {
+                    const productCard = createProductCard(product);
+                    productsContainer.appendChild(productCard);
+                }
+            });
+        }
+
+        // إنشاء بطاقة منتج
+        function createProductCard(product) {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            
+            card.innerHTML = `
+                <div class="product-image">
+                    <img src="${product.Image}" alt="${product.Item_Name}" onerror="this.src='placeholder.jpg'">
+                </div>
+                <div class="product-details">
+                    <div class="product-code">${product.Item_Code}</div>
+                    <h3 class="product-name">${product.Item_Name}</h3>
+                    <div class="product-info">
+                        <span class="product-brand">${product.Brand}</span>
+                        <span class="product-group">${product.Item_Group}</span>
+                    </div>
+                    <div class="product-packing">${product.Packing}</div>
+                    <button class="view-product-btn" data-ar="عرض المنتج" data-en="View Product">عرض المنتج</button>
+                </div>
+            `;
+            
+            // إضافة حدث النقر لعرض تفاصيل المنتج
+            const viewBtn = card.querySelector('.view-product-btn');
+            viewBtn.addEventListener('click', () => showProductModal(product));
+            
+            return card;
+        }
+
+        // عرض مودال تفاصيل المنتج
+        function showProductModal(product) {
+            const modal = document.getElementById('productModal');
+            const modalImg = document.getElementById('modal-img');
+            const modalName = document.getElementById('modal-name');
+            const modalDescription = document.getElementById('modal-description');
+            const modalCode = document.getElementById('modal-code');
+            const modalGroup = document.getElementById('modal-group');
+            const modalBrand = document.getElementById('modal-brand');
+            const modalPacking = document.getElementById('modal-packing');
+            
+            modalImg.src = product.Image;
+            modalImg.alt = product.Item_Name;
+            modalName.textContent = product.Item_Name;
+            modalDescription.textContent = product.Item_Name;
+            modalCode.textContent = product.Item_Code;
+            modalGroup.textContent = product.Item_Group;
+            modalBrand.textContent = product.Brand;
+            modalPacking.textContent = product.Packing;
+            
+            modal.style.display = 'block';
+            
+            // إغلاق المودال عند النقر على زر الإغلاق
+            const closeBtn = modal.querySelector('.close-btn');
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+            
+            // إغلاق المودال عند النقر خارج المحتوى
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        }
+
+        // إعداد التبديل بين اللغات
+        function setupLanguageToggle() {
+            const languageToggle = document.getElementById('languageToggle');
+            const langText = languageToggle.querySelector('.lang-text');
+            
+            languageToggle.addEventListener('click', function() {
+                currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+                langText.textContent = currentLanguage === 'ar' ? 'EN' : 'AR';
+                
+                // تحديث النصوص حسب اللغة المحددة
+                updateLanguage();
+            });
+        }
+
+        // تحديث النصوص حسب اللغة المحددة
+        function updateLanguage() {
+            // تحديث النصوص التي تحتوي على خاصية data-ar و data-en
+            const elements = document.querySelectorAll('[data-ar], [data-en]');
+            elements.forEach(element => {
+                if (element.hasAttribute('data-ar') && element.hasAttribute('data-en')) {
+                    element.textContent = currentLanguage === 'ar' ? 
+                        element.getAttribute('data-ar') : 
+                        element.getAttribute('data-en');
+                }
+            });
+            
+            // تحديث النصوص في الأزرار
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(button => {
+                if (button.hasAttribute('data-ar') && button.hasAttribute('data-en')) {
+                    button.textContent = currentLanguage === 'ar' ? 
+                        button.getAttribute('data-ar') : 
+                        button.getAttribute('data-en');
+                }
+            });
+            
+            // تحديث النصوص في عناصر الواجهة الأخرى
+            document.querySelectorAll('.view-product-btn').forEach(btn => {
+                btn.textContent = currentLanguage === 'ar' ? 
+                    btn.getAttribute('data-ar') : 
+                    btn.getAttribute('data-en');
+            });
+            
+            // تحديث النصوص في المودال
+            document.querySelectorAll('.spec-item strong').forEach(el => {
+                el.textContent = currentLanguage === 'ar' ? 
+                    el.getAttribute('data-ar') : 
+                    el.getAttribute('data-en');
+            });
+            
+            // تحديث النصوص في الفوتر
+            document.querySelectorAll('[data-ar-placeholder], [data-en-placeholder]').forEach(input => {
+                input.placeholder = currentLanguage === 'ar' ? 
+                    input.getAttribute('data-ar-placeholder') : 
+                    input.getAttribute('data-en-placeholder');
+            });
+            
+            // تغيير اتجاه الصفحة حسب اللغة
+            document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = currentLanguage === 'ar' ? 'ar' : 'en';
+        }
+
+        // إعداد تصفية المنتجات
+        function setupProductFilter() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // إزالة النشاط من جميع الأزرار
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // إضافة النشاط للزر المحدد
+                    this.classList.add('active');
+                    
+                    // تحديث عامل التصفية الحالي
+                    currentFilter = this.getAttribute('data-filter');
+                    
+                    // إعادة تحميل المنتجات مع التصفية المحددة
+                    loadProducts();
+                    
+                    // تحديث النصوص حسب اللغة
+                    updateLanguage();
+                });
+            });
+        }
+
+        // إعداد زر العودة للأعلى
+        function setupScrollToTop() {
+            const scrollToTopBtn = document.getElementById('scrollToTop');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollToTopBtn.classList.add('show');
+                } else {
+                    scrollToTopBtn.classList.remove('show');
+                }
+            });
+            
+            scrollToTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+        }
+    </script>
+</body>
+</html>
