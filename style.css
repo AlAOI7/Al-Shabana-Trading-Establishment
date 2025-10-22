@@ -21,7 +21,151 @@
     --transition-medium: 0.5s;
     --transition-slow: 0.8s;
 }
+  .nav-list {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+}
 
+.nav-link {
+    color: var(--text-dark);
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--primary-blue);
+    background: var(--secondary-light);
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    right: 50%;
+    transform: translateX(50%);
+    width: 6px;
+    height: 6px;
+    background: var(--accent-gold);
+    border-radius: 50%;
+}
+    /* ==================================== */
+/* استجابة الهاتف المحمول         */
+/* ==================================== */
+@media (max-width: 792px) {
+    /* إخفاء شريط التنقل في العرض الأساسي */
+    .main-nav {
+        display: none;
+        position: absolute;
+        top: 80px; /* المسافة من أسفل الهيدر */
+        left: 0;
+        right: 0;
+        background: var(--text-light); /* خلفية بيضاء للقائمة المنسدلة */
+        box-shadow: var(--shadow-lg);
+        border-bottom-left-radius: var(--border-radius);
+        border-bottom-right-radius: var(--border-radius);
+        overflow: hidden;
+        z-index: 900; /* أقل من الهيدر (1000) ولكن أعلى من باقي المحتوى */
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: opacity var(--transition-fast), transform var(--transition-fast);
+    }
+
+    /* عرض القائمة عندما تكون مفتوحة (سيتم التحكم به بواسطة JavaScript) */
+    .main-nav.open {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .nav-list {
+        flex-direction: column; /* ترتيب العناصر عمودياً */
+        gap: 0;
+        padding: 10px 0;
+    }
+
+    .nav-list li {
+        width: 100%;
+        border-bottom: 1px solid var(--secondary-light); /* خط فاصل بين العناصر */
+    }
+
+    .nav-list li:last-child {
+        border-bottom: none;
+    }
+
+    .nav-link {
+        padding: 15px 20px;
+        width: 100%;
+        justify-content: flex-start; /* محاذاة النص لليمين/اليسار */
+        font-size: 1.1rem;
+        border-radius: 0; /* إزالة الحدود الدائرية لملء العرض */
+    }
+
+    /* إزالة النقطة النشطة في تصميم الجوال */
+    .nav-link.active::after {
+        content: none;
+    }
+    
+    .nav-link.active {
+        /* تمييز العنصر النشط */
+        background: var(--secondary-light); 
+        border-right: 4px solid var(--accent-gold); /* خط جانبي لتمييز النشط */
+    }
+
+    /* إظهار زر القائمة (Menu Toggle) */
+    .menu-toggle {
+        display: flex;
+        z-index: 1010; /* تأكد من أنه مرئي فوق القائمة */
+    }
+
+    /* تأثير الـ Hamburger icon عند الفتح (Hamburger to X) */
+    .menu-toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+    .menu-toggle.active span:nth-child(2) {
+        opacity: 0;
+    }
+    .menu-toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    /* تعديلات على العناصر الأخرى في الهيدر */
+    .header-content {
+        padding: 10px 0; /* تقليل حجم الهيدر قليلاً */
+    }
+    .logo-image {
+        height: 40px; /* تقليل حجم الشعار */
+    }
+    .logo-main {
+        font-size: 1.2rem;
+    }
+    .logo-sub {
+        display: none; /* إخفاء النص الفرعي لتوفير المساحة */
+    }
+
+    /* ترتيب الأزرار في الهيدر */
+    .header-actions {
+        order: -1; /* تحريك الأزرار لليسار/اليمين حسب اتجاه اللغة */
+    }
+}
+
+/* استجابة للشاشات الصغيرة جداً */
+@media (max-width: 600px) {
+    .container {
+        padding: 0 15px;
+    }
+    .logo-container {
+        gap: 10px;
+    }
+}
 /* إعادة التعيين الأساسي */
 * {
     margin: 0;
@@ -133,42 +277,7 @@ body {
 }
 
 /* شريط التنقل */
-.nav-list {
-    display: flex;
-    list-style: none;
-    gap: 30px;
-}
 
-.nav-link {
-    color: var(--text-dark);
-    text-decoration: none;
-    font-weight: 500;
-    padding: 8px 16px;
-    border-radius: var(--border-radius-sm);
-    transition: var(--transition-fast);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-}
-
-.nav-link:hover,
-.nav-link.active {
-    color: var(--primary-blue);
-    background: var(--secondary-light);
-}
-
-.nav-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -5px;
-    right: 50%;
-    transform: translateX(50%);
-    width: 6px;
-    height: 6px;
-    background: var(--accent-gold);
-    border-radius: 50%;
-}
 
 /* أزرار الهيدر */
 .header-actions {
@@ -1294,9 +1403,6 @@ section {
         flex-wrap: wrap;
     }
     
-    .nav-list {
-        display: none;
-    }
     
     .menu-toggle {
         display: flex;
