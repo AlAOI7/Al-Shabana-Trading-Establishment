@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اتصل بنا - مؤسسة عبدالرحمن محمد الشبانات التجارية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        
+        /* وسائل التواصل الاجتماعي */
+        .social-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 80px;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 25px;
+            background: var(--white);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-dark);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .social-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--white);
+        }
+
+        .whatsapp .social-icon { background: #25D366; }
+        .twitter .social-icon { background: #1DA1F2; }
+        .instagram .social-icon { background: #E4405F; }
+        .facebook .social-icon { background: #1877F2; }
+
+        .social-info h3 {
+            margin-bottom: 5px;
+            font-size: 1.2rem;
+        }
+
+        .social-info p {
+            color: var(--text-light);
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .social-handle {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+    </style>
+</head>
+
+<body>
+     <!-- شريط التنقل العلوي -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="welcome-text" data-ar="مرحباً بكم في مؤسسة الشبانات التجارية" data-en="Welcome to Al Shabana Trading Establishment">مرحباً بكم في مؤسسة الشبانات التجارية</div>
+                <div class="top-bar-actions">
+                    <button id="languageToggle" class="lang-btn">
+                        <i class="fas fa-globe"></i>
+                        <span class="lang-text">EN</span>
+                    </button>
+                    <div class="contact-top">
+                        <a href="tel:+966555382875"><i class="fas fa-phone"></i> +966555382875</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الهيدر الرئيسي -->
+      <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="2.png" alt="شعار مؤسسة الشبانات" class="logo-image">
+                    <div class="logo-text">
+                        <span class="logo-main" data-ar="مؤسسة الشبانات التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانات التجارية</span>
+                        <span class="logo-sub">Al Shabana Trading Establishment</span>
+                    </div>
+                </div>
+                
+                <nav class="main-nav">
+                    <ul class="nav-list">
+                        <li><a href="index.html" class="nav-link active">
+                            <i class="fas fa-home"></i> 
+                            <span data-ar="الرئيسية" data-en="Home">الرئيسية</span>
+                        </a></li>
+                        <li><a href="about.html" class="nav-link">
+                            <i class="fas fa-building"></i> 
+                            <span data-ar="من نحن" data-en="About">عنا</span>
+                        </a></li>
+                        <li><a href="products.html" class="nav-link">
+                            <i class="fas fa-box-open"></i> 
+                            <span data-ar="المنتجات" data-en="Products">المنتجات</span>
+                        </a></li>
+                        <li><a href="#stats" class="nav-link">
+                            <i class="fas fa-chart-bar"></i> 
+                            <span data-ar="الإحصائيات" data-en="Statistics">الإحصائيات</span>
+                        </a></li>
+                        <li><a href="#brands" class="nav-link">
+                            <i class="fas fa-tags"></i> 
+                            <span data-ar="العلامات" data-en="Brands">العلامات</span>
+                        </a></li>
+                        <li><a href="contact.html" class="nav-link">
+                            <i class="fas fa-envelope"></i> 
+                            <span data-ar="اتصل بنا" data-en="Contact">اتصل بنا</span>
+                        </a></li>
+                    </ul>
+                </nav>
+
+                <div class="header-actions">
+                    <button class="search-btn" aria-label="بحث">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="menu-toggle" aria-label="قائمة التنقل">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+    <!-- قسم الهيرو للاتصال -->
+    <section class="contact-hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title" data-ar="اتصل بنا" data-en="Contact Us">اتصل بنا</h1>
+                <p class="hero-subtitle" data-ar="نحن هنا للإجابة على استفساراتك وتقديم أفضل الخدمات" data-en="We're here to answer your inquiries and provide the best services">نحن هنا للإجابة على استفساراتك وتقديم أفضل الخدمات</p>
+                
+                <div class="contact-breadcrumb">
+                    <a href="index.html" data-ar="الرئيسية" data-en="Home">الرئيسية</a>
+                    <i class="fas fa-chevron-left"></i>
+                    <span data-ar="اتصل بنا" data-en="Contact Us">اتصل بنا</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="contact-main">
+        <div class="container">
+            <!-- معلومات الاتصال -->
+            <div class="contact-info-section">
+                <div class="section-header">
+                    <h2 data-ar="معلومات الاتصال" data-en="Contact Information">معلومات الاتصال</h2>
+                    <p data-ar="تواصل معنا عبر القنوات المتاحة التالية" data-en="Contact us through the following available channels">تواصل معنا عبر القنوات المتاحة التالية</p>
+                </div>
+
+                <div class="contact-methods-grid">
+                    <!-- هاتف -->
+                    <div class="contact-method-card">
+                        <div class="method-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="method-content">
+                            <h3 data-ar="هاتف" data-en="Phone">هاتف</h3>
+                            <div class="contact-numbers">
+                                <a href="tel:+966555382875" class="contact-link">
+                                    <i class="fas fa-mobile-alt"></i>
+                                    +966555382875
+                                </a>
+                                <a href="tel:+966112345678" class="contact-link">
+                                    <i class="fas fa-phone-alt"></i>
+                                    +966555382875
+                                </a>
+                            </div>
+                            <p class="method-description" data-ar="متاحون للرد على مكالماتكم طوال أيام الأسبوع" data-en="Available to answer your calls throughout the week">متاحون للرد على مكالماتكم طوال أيام الأسبوع</p>
+                        </div>
+                    </div>
+
+                    <!-- البريد الإلكتروني -->
+                    <div class="contact-method-card">
+                        <div class="method-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="method-content">
+                            <h3 data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</h3>
+                            <div class="contact-emails">
+                                <a href="mailto:info@alshabana.sa" class="contact-link">
+                                    <i class="fas fa-inbox"></i>
+                                    info@alshabana.sa
+                                </a>
+                                <a href="mailto:sales@alshabana.sa" class="contact-link">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    sales@alshabana.sa
+                                </a>
+                            </div>
+                            <p class="method-description" data-ar="سنرد على رسائلكم خلال 24 ساعة" data-en="We will respond to your messages within 24 hours">سنرد على رسائلكم خلال 24 ساعة</p>
+                        </div>
+                    </div>
+
+                    <!-- العنوان -->
+                    <div class="contact-method-card">
+                        <div class="method-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="method-content">
+                            <h3 data-ar="العنوان" data-en="Address">العنوان</h3>
+                            <div class="contact-address">
+                                <i class="fas fa-building"></i>
+                                <div>
+                                    <strong data-ar="المقر الرئيسي" data-en="Headquarters">المقر الرئيسي</strong>
+                                    <p data-ar="المملكة العربية السعودية - الرياض - حي العليا" data-en="Saudi Arabia - Riyadh - Al Olaya District">المملكة العربية السعودية - الرياض - حي العليا</p>
+                                    <p data-ar="شارع الملك فهد - مقابل مركز المملكة" data-en="King Fahd Road - Opposite Kingdom Center">شارع الملك فهد - مقابل مركز المملكة</p>
+                                </div>
+                            </div>
+                            <button class="map-btn" onclick="openMap()">
+                                <i class="fas fa-map"></i>
+                                <span data-ar="فتح الخريطة" data-en="Open Map">فتح الخريطة</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- أوقات العمل -->
+                    <div class="contact-method-card">
+                        <div class="method-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="method-content">
+                            <h3 data-ar="أوقات العمل" data-en="Working Hours">أوقات العمل</h3>
+                            <div class="working-hours">
+                                <div class="time-slot">
+                                    <span data-ar="السبت - الخميس" data-en="Saturday - Thursday">السبت - الخميس</span>
+                                    <span>8:00 ص - 6:00 م</span>
+                                </div>
+                                <div class="time-slot">
+                                    <span data-ar="الجمعة" data-en="Friday">الجمعة</span>
+                                    <span data-ar="إجازة" data-en="Day Off">إجازة</span>
+                                </div>
+                            </div>
+                            <p class="method-description" data-ar="خدمة العملاء متاحة خلال أوقات العمل" data-en="Customer service is available during working hours">خدمة العملاء متاحة خلال أوقات العمل</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- نموذج الاتصال والخرائط -->
+            <div class="contact-form-map-section">
+                <!-- نموذج الاتصال -->
+                <div class="contact-form-container">
+                    <div class="form-header">
+                        <h2 data-ar="أرسل رسالة" data-en="Send Message">أرسل رسالة</h2>
+                        <p data-ar="املأ النموذج وسنقوم بالرد عليك في أقرب وقت" data-en="Fill out the form and we will get back to you as soon as possible">املأ النموذج وسنقوم بالرد عليك في أقرب وقت</p>
+                    </div>
+
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="text" id="name" name="name" required>
+                                <label for="name" data-ar="الاسم الكريم *" data-en="Your Name *">الاسم الكريم *</label>
+                                <div class="form-error" id="nameError"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <input type="email" id="email" name="email" required>
+                                <label for="email" data-ar="البريد الإلكتروني *" data-en="Email Address *">البريد الإلكتروني *</label>
+                                <div class="form-error" id="emailError"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="tel" id="phone" name="phone">
+                                <label for="phone" data-ar="رقم الهاتف" data-en="Phone Number">رقم الهاتف</label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <select id="subject" name="subject" required>
+                                    <option value="" data-ar="اختر الموضوع" data-en="Select Subject">اختر الموضوع</option>
+                                    <option value="inquiry" data-ar="استفسار عام" data-en="General Inquiry">استفسار عام</option>
+                                    <option value="products" data-ar="استفسار عن المنتجات" data-en="Products Inquiry">استفسار عن المنتجات</option>
+                                    <option value="order" data-ar="متابعة طلب" data-en="Order Follow-up">متابعة طلب</option>
+                                    <option value="complaint" data-ar="شكوى" data-en="Complaint">شكوى</option>
+                                    <option value="partnership" data-ar="شراكة" data-en="Partnership">شراكة</option>
+                                    <option value="other" data-ar="أخرى" data-en="Other">أخرى</option>
+                                </select>
+                                <div class="form-error" id="subjectError"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <textarea id="message" name="message" rows="6" required placeholder=" "></textarea>
+                            <label for="message" data-ar="رسالتك *" data-en="Your Message *">رسالتك *</label>
+                            <div class="form-error" id="messageError"></div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn" id="submitBtn">
+                                <span class="btn-text" data-ar="إرسال الرسالة" data-en="Send Message">إرسال الرسالة</span>
+                                <div class="btn-loading">
+                                    <div class="spinner"></div>
+                                    <span data-ar="جاري الإرسال..." data-en="Sending...">جاري الإرسال...</span>
+                                </div>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- الخريطة -->
+                <div class="map-container">
+                    <div class="map-header">
+                        <h2 data-ar="موقعنا على الخريطة" data-en="Our Location on Map">موقعنا على الخريطة</h2>
+                        <p data-ar="يمكنكم زيارتنا في مقرنا الرئيسي بالرياض" data-en="You can visit us at our headquarters in Riyadh">يمكنكم زيارتنا في مقرنا الرئيسي بالرياض</p>
+                    </div>
+                    
+                    <div class="map-wrapper">
+                        <!-- خريطة جوجل مبدئية -->
+                        <div class="static-map">
+                            <div class="map-placeholder">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <h3 data-ar="خريطة الموقع" data-en="Location Map">خريطة الموقع</h3>
+                                <p data-ar="المملكة العربية السعودية - الرياض" data-en="Saudi Arabia - Riyadh">المملكة العربية السعودية - الرياض</p>
+                                <button class="open-map-btn" onclick="openGoogleMaps()">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span data-ar="فتح في خرائط جوجل" data-en="Open in Google Maps">فتح في خرائط جوجل</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="location-details">
+                            <div class="location-item">
+                                <i class="fas fa-car"></i>
+                                <div>
+                                    <strong data-ar="مواقف سيارات" data-en="Parking">مواقف سيارات</strong>
+                                    <span data-ar="متاحة للعملاء" data-en="Available for customers">متاحة للعملاء</span>
+                                </div>
+                            </div>
+                            <div class="location-item">
+                                <i class="fas fa-wheelchair"></i>
+                                <div>
+                                    <strong data-ar="مدخل مناسب" data-en="Accessible Entrance">مدخل مناسب</strong>
+                                    <span data-ar="لذوي الاحتياجات الخاصة" data-en="For people with disabilities">لذوي الاحتياجات الخاصة</span>
+                                </div>
+                            </div>
+                            <div class="location-item">
+                                <i class="fas fa-subway"></i>
+                                <div>
+                                    <strong data-ar="مواصلات عامة" data-en="Public Transport">مواصلات عامة</strong>
+                                    <span data-ar="قريب من محطات المترو" data-en="Near metro stations">قريب من محطات المترو</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <!-- وسائل التواصل الاجتماعي -->
+            <div class="social-contact-section">
+                <div class="section-header">
+                    <h2 data-ar="تواصل معنا على وسائل التواصل" data-en="Connect with us on Social Media">تواصل معنا على وسائل التواصل</h2>
+                    <p data-ar="تابعنا للحصول على آخر الأخبار والعروض" data-en="Follow us for the latest news and offers">تابعنا للحصول على آخر الأخبار والعروض</p>
+                </div>
+
+                <div class="social-links-grid">
+                    <a href="https://wa.me/966555382875" class="social-link whatsapp" target="_blank">
+                        <div class="social-icon">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="social-info">
+                            <h3 data-ar="واتساب" data-en="WhatsApp">واتساب</h3>
+                            <p data-ar="راسلنا مباشرة" data-en="Message us directly">راسلنا مباشرة</p>
+                            <span class="social-handle">+966555382875</span>
+                        </div>
+                    </a>
+
+                    <a href="https://twitter.com/alshabana" class="social-link twitter" target="_blank">
+                        <div class="social-icon">
+                            <i class="fab fa-twitter"></i>
+                        </div>
+                        <div class="social-info">
+                            <h3 data-ar="تويتر" data-en="Twitter">تويتر</h3>
+                            <p data-ar="تابع آخر التغريدات" data-en="Follow latest tweets">تابع آخر التغريدات</p>
+                            <span class="social-handle">@alshabana</span>
+                        </div>
+                    </a>
+
+                    <a href="https://instagram.com/alshabana" class="social-link instagram" target="_blank">
+                        <div class="social-icon">
+                            <i class="fab fa-instagram"></i>
+                        </div>
+                        <div class="social-info">
+                            <h3 data-ar="انستغرام" data-en="Instagram">انستغرام</h3>
+                            <p data-ar="شاهد منتجاتنا" data-en="View our products">شاهد منتجاتنا</p>
+                            <span class="social-handle">@alshabana</span>
+                        </div>
+                    </a>
+
+                    <a href="https://facebook.com/alshabana" class="social-link facebook" target="_blank">
+                        <div class="social-icon">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="social-info">
+                            <h3 data-ar="فيسبوك" data-en="Facebook">فيسبوك</h3>
+                            <p data-ar="انضم إلى مجتمعنا" data-en="Join our community">انضم إلى مجتمعنا</p>
+                            <span class="social-handle">AlShabanaTrading</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- الأسئلة الشائعة -->
+            <div class="faq-section">
+                <div class="section-header">
+                    <h2 data-ar="أسئلة متكررة" data-en="Frequently Asked Questions">أسئلة متكررة</h2>
+                    <p data-ar="إجابات على الأسئلة الأكثر شيوعاً" data-en="Answers to the most common questions">إجابات على الأسئلة الأكثر شيوعاً</p>
+                </div>
+
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3 data-ar="ما هي أوقات استلام الطلبات؟" data-en="What are the order receiving times?">ما هي أوقات استلام الطلبات؟</h3>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p data-ar="نستقبل الطلبات خلال أيام العمل من السبت إلى الخميس من الساعة 8:00 صباحاً حتى 6:00 مساءً." data-en="We receive orders during working days from Saturday to Thursday from 8:00 AM to 6:00 PM.">نستقبل الطلبات خلال أيام العمل من السبت إلى الخميس من الساعة 8:00 صباحاً حتى 6:00 مساءً.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3 data-ar="هل تقدمون خدمة التوصيل؟" data-en="Do you offer delivery service?">هل تقدمون خدمة التوصيل؟</h3>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p data-ar="نعم، نقدم خدمة التوصيل لجميع أنحاء الرياض مع إمكانية التوصيل لمدن أخرى حسب الطلب." data-en="Yes, we offer delivery service throughout Riyadh with the possibility of delivery to other cities upon request.">نعم، نقدم خدمة التوصيل لجميع أنحاء الرياض مع إمكانية التوصيل لمدن أخرى حسب الطلب.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3 data-ar="كيف يمكنني متابعة طلبي؟" data-en="How can I track my order?">كيف يمكنني متابعة طلبي؟</h3>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p data-ar="يمكنك متابعة طلبك عبر الاتصال بنا على الأرقام المخصصة للطلبات أو عبر البريد الإلكتروني." data-en="You can track your order by calling us on the dedicated order numbers or via email.">يمكنك متابعة طلبك عبر الاتصال بنا على الأرقام المخصصة للطلبات أو عبر البريد الإلكتروني.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3 data-ar="ما هي طرق الدفع المتاحة؟" data-en="What payment methods are available?">ما هي طرق الدفع المتاحة؟</h3>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p data-ar="نقبل الدفع نقداً، التحويل البنكي، وبطاقات الائتمان حسب الاتفاق." data-en="We accept cash, bank transfer, and credit cards as agreed.">نقبل الدفع نقداً، التحويل البنكي، وبطاقات الائتمان حسب الاتفاق.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- الفوتر -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="2.png" alt="شعار مؤسسة الشبانات">
+                        <span data-ar="مؤسسة الشبانات التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانات التجارية</span>
+                    </div>
+                    <p class="footer-description" data-ar="شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010" data-en="Your trusted partner in providing essential household supplies since 2010">شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h3>
+                    <ul class="footer-links">
+                        <li><a href="index.html#about" data-ar="من نحن" data-en="About Us">من نحن</a></li>
+                        <li><a href="products.html" data-ar="المنتجات" data-en="Products">المنتجات</a></li>
+                        <li><a href="index.html#brands" data-ar="العلامات" data-en="Brands">العلامات</a></li>
+                        <li><a href="contact.html" data-ar="اتصل بنا" data-en="Contact">اتصل بنا</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="المنتجات" data-en="Products">المنتجات</h3>
+                    <ul class="footer-links">
+                        <li><a href="products.html" data-filter="Energy" data-ar="الطاقة والوقود" data-en="Energy & Fuel">الطاقة والوقود</a></li>
+                        <li><a href="products.html" data-filter="Cleaning" data-ar="مواد التنظيف" data-en="Cleaning Materials">مواد التنظيف</a></li>
+                        <li><a href="products.html" data-ar="جميع المنتجات" data-en="All Products">جميع المنتجات</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="اشترك في النشرة" data-en="Subscribe to Newsletter">اشترك في النشرة</h3>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="بريدك الإلكتروني" data-ar-placeholder="بريدك الإلكتروني" data-en-placeholder="Your Email" required>
+                        <button type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p data-ar="&copy; 2024 مؤسسة عبدالرحمن محمد الشبانات التجارية. جميع الحقوق محفوظة." data-en="&copy; 2024 Al Rahman Mohammed Al Shabana Trading Establishment. All rights reserved.">&copy; 2024 مؤسسة عبدالرحمن محمد الشبانات التجارية. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- زر العودة للأعلى -->
+    <button id="scrollToTop" class="scroll-to-top">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <script src="script.js"></script>
+    <script src="contact.js"></script>
+</body>
+</html>

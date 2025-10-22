@@ -86,6 +86,7 @@ body {
     gap: 8px;
 }
 
+
 /* الهيدر الرئيسي */
 .main-header {
     background: var(--text-light);
@@ -2852,3 +2853,301 @@ section {
         text-align: center;
     }
 }
+
+/* تنسيق قسم اتصل بنا */
+            .contact-section {
+                padding: 80px 0;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                direction: rtl;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
+
+            /* تنسيق العنوان */
+            .section-title {
+                text-align: center;
+                margin-bottom: 60px;
+            }
+
+            .title-ar {
+                display: block;
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: #2c3e50;
+                margin-bottom: 10px;
+            }
+
+            .title-en {
+                display: block;
+                font-size: 1.5rem;
+                font-weight: 400;
+                color: #7f8c8d;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
+
+            /* تنسيق الشبكة */
+            .contact-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 60px;
+                align-items: start;
+            }
+
+            /* تنسيق معلومات الاتصال */
+            .contact-info {
+                display: flex;
+                flex-direction: column;
+                gap: 25px;
+            }
+
+            .contact-card {
+                display: flex;
+                align-items: flex-start;
+                gap: 20px;
+                padding: 25px;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .contact-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            }
+
+            .contact-icon {
+                width: 60px;
+                height: 60px;
+                background: linear-gradient(135deg, #3498db, #2980b9);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .contact-icon i {
+                color: white;
+                font-size: 1.5rem;
+            }
+
+            .contact-details h3 {
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: #2c3e50;
+                margin-bottom: 8px;
+            }
+
+            .contact-details p {
+                color: #5d6d7e;
+                font-size: 1rem;
+                line-height: 1.6;
+                margin: 0;
+            }
+
+            /* تنسيق روابط التواصل */
+            .social-links {
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                margin-top: 20px;
+            }
+
+            .social-link {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                text-decoration: none;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                font-size: 1.2rem;
+            }
+
+            .social-link:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            }
+
+            .whatsapp { background: #25D366; }
+            .twitter { background: #1DA1F2; }
+            .instagram { background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D); }
+            .facebook { background: #1877F2; }
+
+            /* تنسيق الفورم */
+            .contact-form {
+                background: white;
+                padding: 40px;
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            }
+
+            .form-group {
+                position: relative;
+                margin-bottom: 30px;
+            }
+
+            .form-group input,
+            .form-group textarea {
+                width: 100%;
+                padding: 15px;
+                border: 2px solid #e0e0e0;
+                border-radius: 10px;
+                font-size: 1rem;
+                background: #f8f9fa;
+                transition: all 0.3s ease;
+                outline: none;
+                font-family: inherit;
+            }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 120px;
+            }
+
+            .form-group label {
+                position: absolute;
+                top: 50%;
+                right: 15px;
+                transform: translateY(-50%);
+                color: #7f8c8d;
+                font-size: 1rem;
+                transition: all 0.3s ease;
+                pointer-events: none;
+                background: white;
+                padding: 0 8px;
+            }
+
+            .form-group textarea + label {
+                top: 25px;
+                transform: none;
+            }
+
+            .form-group input:focus,
+            .form-group textarea:focus {
+                border-color: #3498db;
+                background: white;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+
+            .form-group input:focus + label,
+            .form-group textarea:focus + label,
+            .form-group input:not(:placeholder-shown) + label,
+            .form-group textarea:not(:placeholder-shown) + label {
+                top: 0;
+                font-size: 0.85rem;
+                color: #3498db;
+                font-weight: 600;
+            }
+
+            /* تنسيق زر الإرسال */
+            .submit-btn {
+                width: 100%;
+                padding: 18px;
+                background: linear-gradient(135deg, #3498db, #2980b9);
+                color: white;
+                border: none;
+                border-radius: 12px;
+                font-size: 1.1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .submit-btn:hover {
+                background: linear-gradient(135deg, #2980b9, #3498db);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+            }
+
+            .submit-btn:active {
+                transform: translateY(0);
+            }
+
+            /* التجاوب مع الشاشات المختلفة */
+            @media (max-width: 768px) {
+                .contact-grid {
+                    grid-template-columns: 1fr;
+                    gap: 40px;
+                }
+                
+                .contact-card {
+                    padding: 20px;
+                }
+                
+                .contact-form {
+                    padding: 30px;
+                }
+                
+                .title-ar {
+                    font-size: 2rem;
+                }
+                
+                .title-en {
+                    font-size: 1.2rem;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .contact-section {
+                    padding: 50px 0;
+                }
+                
+                .contact-form {
+                    padding: 20px;
+                }
+                
+                .contact-card {
+                    flex-direction: column;
+                    text-align: center;
+                    gap: 15px;
+                }
+                
+                .social-links {
+                    flex-wrap: wrap;
+                }
+            }
+
+            /* تأثيرات إضافية */
+            .form-group input:invalid:not(:focus):not(:placeholder-shown) {
+                border-color: #e74c3c;
+            }
+
+            .form-group input:valid:not(:focus):not(:placeholder-shown) {
+                border-color: #27ae60;
+            }
+
+            /* تأثيرات للرسوم المتحركة */
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .contact-card,
+            .contact-form {
+                animation: fadeInUp 0.6s ease forwards;
+            }
+
+            .contact-card:nth-child(1) { animation-delay: 0.1s; }
+            .contact-card:nth-child(2) { animation-delay: 0.2s; }
+            .contact-card:nth-child(3) { animation-delay: 0.3s; }
+            .contact-card:nth-child(4) { animation-delay: 0.4s; }
+            .contact-form { animation-delay: 0.5s; }

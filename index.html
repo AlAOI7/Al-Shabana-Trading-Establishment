@@ -3,25 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مؤسسة عبدالرحمن محمد الشبانة التجارية - الصفحة الرئيسية</title>
+    <title>مؤسسة عبدالرحمن محمد الشبانات التجارية - الصفحة الرئيسية</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
+<style>
+    /* تحسينات لعرض صور المنتجات */
+.product-image {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.product-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-img {
+    transform: scale(1.05);
+}
+
+.product-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.fallback-icon {
+    background: #e9ecef;
+}
+
+.product-code {
+    background: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.product-name {
+    font-size: 1.1rem;
+    margin: 8px 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+.product-group, .product-brand {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 4px 0;
+}
+
+.no-products {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.1rem;
+    color: #666;
+    grid-column: 1 / -1;
+}
+</style>
+
 <body>
     <!-- شريط التنقل العلوي -->
     <div class="top-bar">
         <div class="container">
             <div class="top-bar-content">
-                <div class="welcome-text" data-ar="مرحباً بكم في مؤسسة الشبانة التجارية" data-en="Welcome to Al Shabana Trading Establishment">مرحباً بكم في مؤسسة الشبانة التجارية</div>
+                <div class="welcome-text" data-ar="مرحباً بكم في مؤسسة الشبانات التجارية" data-en="Welcome to Al Shabana Trading Establishment">مرحباً بكم في مؤسسة الشبانات التجارية</div>
                 <div class="top-bar-actions">
                     <button id="languageToggle" class="lang-btn">
                         <i class="fas fa-globe"></i>
                         <span class="lang-text">EN</span>
                     </button>
                     <div class="contact-top">
-                        <a href="tel:+966XXXXXXXXXX"><i class="fas fa-phone"></i> +966 XXXXXXXX</a>
+                        <a href="tel:+966555382875"><i class="fas fa-phone"></i> +966555382875</a>
                     </div>
                 </div>
             </div>
@@ -29,13 +101,13 @@
     </div>
 
     <!-- الهيدر الرئيسي -->
-    <header class="main-header">
+      <header class="main-header">
         <div class="container">
             <div class="header-content">
                 <div class="logo-container">
-                    <img src="2.png" alt="شعار مؤسسة الشبانة" class="logo-image">
+                    <img src="2.png" alt="شعار مؤسسة الشبانات" class="logo-image">
                     <div class="logo-text">
-                        <span class="logo-main" data-ar="مؤسسة الشبانة التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانة التجارية</span>
+                        <span class="logo-main" data-ar="مؤسسة الشبانات التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانات التجارية</span>
                         <span class="logo-sub">Al Shabana Trading Establishment</span>
                     </div>
                 </div>
@@ -48,7 +120,7 @@
                         </a></li>
                         <li><a href="about.html" class="nav-link">
                             <i class="fas fa-building"></i> 
-                            <span data-ar="من نحن" data-en="About">عنا  </span>
+                            <span data-ar="من نحن" data-en="About">عنا</span>
                         </a></li>
                         <li><a href="products.html" class="nav-link">
                             <i class="fas fa-box-open"></i> 
@@ -83,6 +155,7 @@
         </div>
     </header>
 
+
     <!-- قسم الهيرو المتحرك -->
     <section id="hero" class="hero-slider">
         <div class="hero-background">
@@ -97,19 +170,23 @@
             <div class="hero-content">
                 <div class="hero-text">
                     <h1 class="hero-title animate-fade-in">
-                        <span class="title-main" data-ar="مؤسسة عبدالرحمن محمد الشبانة التجارية" data-en="Al Rahman Mohammed Al Shabana Trading Est.">مؤسسة عبدالرحمن محمد الشبانة التجارية</span>
+                        <span class="title-main" data-ar="مؤسسة عبدالرحمن محمد الشبانات التجارية" data-en="Al Rahman Mohammed Al Shabana Trading Est.">مؤسسة عبدالرحمن محمد الشبانات التجارية</span>
                         <span class="title-sub">Al Rahman Mohammed Al Shabana Trading Est.</span>
                     </h1>
                     <h2 class="hero-subtitle animate-fade-in-delay" data-ar="شريكك الموثوق لتأمين مستلزمات المنزل الأساسية" data-en="Your Trusted Partner for Essential Household Supplies">شريكك الموثوق لتأمين مستلزمات المنزل الأساسية</h2>
                     <p class="hero-description animate-fade-in-delay-2" data-ar="نجمع بين تقاليد الطاقة المنزلية الدافئة وتقنيات النقاء والتنظيف الحديثة لتقديم أفضل الحلول لعملائنا الكرام" data-en="We combine traditional home energy warmth with modern purification and cleaning technologies to provide the best solutions for our valued customers">نجمع بين تقاليد الطاقة المنزلية الدافئة وتقنيات النقاء والتنظيف الحديثة لتقديم أفضل الحلول لعملائنا الكرام</p>
                     <div class="hero-actions animate-fade-in-delay-3">
-                        <a href="#products" class="cta-button primary">
+                        <a href="products.html" class="cta-button primary">
                             <span data-ar="تصفح المنتجات" data-en="Browse Products">تصفح المنتجات</span>
                             <i class="fas fa-arrow-left"></i>
                         </a>
-                        <a href="#about" class="cta-button secondary">
+                        <a href="about.html" class="cta-button secondary">
                             <span data-ar="تعرف علينا" data-en="About Us">تعرف علينا</span>
                             <i class="fas fa-user"></i>
+                        </a>
+                         <a href="contact.html" class="cta-button secondary">
+                            <span data-ar="ـواصل  " data-en="About Us">تواصل  معنى  </span>
+                            <i class="fas fa-phone"></i>
                         </a>
                     </div>
                 </div>
@@ -151,7 +228,7 @@
                 <div class="about-content">
                     <div class="about-text">
                         <div class="company-description">
-                            <p data-ar="تأسست مؤسسة عبدالرحمن محمد الشبانة التجارية لتكون رائدة في توفير مستلزمات المنزل الأساسية. نحن نجمع بين الطاقة المنزلية الدافئة (الفحم وأخشاب الوقود) وبين حلول النقاء والتنظيف الحديثة (أجهزة تنقية المياه ومواد التنظيف)." data-en="Al Rahman Mohammed Al Shabana Trading Establishment was founded to be a leader in providing essential household supplies. We combine warm home energy (coal and fuel wood) with modern purity and cleaning solutions (water purification devices and cleaning materials).">تأسست مؤسسة عبدالرحمن محمد الشبانة التجارية لتكون رائدة في توفير مستلزمات المنزل الأساسية. نحن نجمع بين <strong data-ar="الطاقة المنزلية الدافئة" data-en="warm home energy">الطاقة المنزلية الدافئة</strong> (الفحم وأخشاب الوقود) وبين <strong data-ar="حلول النقاء والتنظيف الحديثة" data-en="modern purity and cleaning solutions">حلول النقاء والتنظيف الحديثة</strong> (أجهزة تنقية المياه ومواد التنظيف).</p>
+                            <p data-ar="تأسست مؤسسة عبدالرحمن محمد الشبانات التجارية لتكون رائدة في توفير مستلزمات المنزل الأساسية. نحن نجمع بين الطاقة المنزلية الدافئة (الفحم وأخشاب الوقود) وبين حلول النقاء والتنظيف الحديثة (أجهزة تنقية المياه ومواد التنظيف)." data-en="Al Rahman Mohammed Al Shabana Trading Establishment was founded to be a leader in providing essential household supplies. We combine warm home energy (coal and fuel wood) with modern purity and cleaning solutions (water purification devices and cleaning materials).">تأسست مؤسسة عبدالرحمن محمد الشبانات التجارية لتكون رائدة في توفير مستلزمات المنزل الأساسية. نحن نجمع بين <strong data-ar="الطاقة المنزلية الدافئة" data-en="warm home energy">الطاقة المنزلية الدافئة</strong> (الفحم وأخشاب الوقود) وبين <strong data-ar="حلول النقاء والتنظيف الحديثة" data-en="modern purity and cleaning solutions">حلول النقاء والتنظيف الحديثة</strong> (أجهزة تنقية المياه ومواد التنظيف).</p>
                         </div>
                         
                         <div class="mission-vision-grid">
@@ -348,7 +425,7 @@
                             </div>
                             <div class="contact-details">
                                 <h3 data-ar="هاتف" data-en="Phone">هاتف</h3>
-                                <p>+966 XXXXXXXX</p>
+                                <p>+966555382875</p>
                             </div>
                         </div>
                         
@@ -425,8 +502,8 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <img src="2.png" alt="شعار مؤسسة الشبانة">
-                        <span data-ar="مؤسسة الشبانة التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانة التجارية</span>
+                        <img src="2.png" alt="شعار مؤسسة الشبانات">
+                        <span data-ar="مؤسسة الشبانات التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانات التجارية</span>
                     </div>
                     <p class="footer-description" data-ar="شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010" data-en="Your trusted partner in providing essential household supplies since 2010">شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010</p>
                 </div>
@@ -463,7 +540,7 @@
             </div>
             
             <div class="footer-bottom">
-                <p data-ar="&copy; 2024 مؤسسة عبدالرحمن محمد الشبانة التجارية. جميع الحقوق محفوظة." data-en="&copy; 2024 Al Rahman Mohammed Al Shabana Trading Establishment. All rights reserved.">&copy; 2024 مؤسسة عبدالرحمن محمد الشبانة التجارية. جميع الحقوق محفوظة.</p>
+                <p data-ar="&copy; 2024 مؤسسة عبدالرحمن محمد الشبانات التجارية. جميع الحقوق محفوظة." data-en="&copy; 2024 Al Rahman Mohammed Al Shabana Trading Establishment. All rights reserved.">&copy; 2024 مؤسسة عبدالرحمن محمد الشبانات التجارية. جميع الحقوق محفوظة.</p>
             </div>
         </div>
     </footer>
@@ -506,7 +583,88 @@
     <button id="scrollToTop" class="scroll-to-top">
         <i class="fas fa-chevron-up"></i>
     </button>
+       <script>// تهيئة شريط التنقل - الإصدار المعدل
+   // تهيئة القائمة المتنقلة
+        function initMobileMenu() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            
+            if (menuToggle && mainNav) {
+                menuToggle.addEventListener('click', function() {
+                    mainNav.classList.toggle('active');
+                    menuToggle.classList.toggle('active');
+                });
+            }
+        }
 
+// حل بديل للتأكد من عمل القائمة
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const mainNav = document.querySelector('.main-nav');
+    
+    if (menuToggle && mainNav) {
+        menuToggle.addEventListener('click', function() {
+            console.log('تم النقر على زر القائمة');
+            console.log('الحالة قبل:', mainNav.classList.contains('active'));
+            
+            mainNav.classList.toggle('active');
+            menuToggle.classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+            
+            console.log('الحالة بعد:', mainNav.classList.contains('active'));
+            console.log('أنماط القائمة:', window.getComputedStyle(mainNav).display);
+        });
+        
+        // إغلاق القائمة عند النقر على أي رابط
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    mainNav.classList.remove('active');
+                    menuToggle.classList.remove('active');
+                    document.body.classList.remove('menu-open');
+                }
+            });
+        });
+    }
+});
+    </script>
+<script>// دالة لتغيير اللغة
+    function changeLanguage(lang) {
+    // تحديث النصوص في معلومات الاتصال
+    document.querySelectorAll('[data-ar][data-en]').forEach(element => {
+        element.textContent = element.getAttribute(`data-${lang}`);
+    });
+    
+    // تحديث النصوص في الفورم
+    document.querySelectorAll('label[data-ar][data-en]').forEach(label => {
+        label.textContent = label.getAttribute(`data-${lang}`);
+    });
+    
+    // تحديد اتجاه الصفحة
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+}
+
+        // تهيئة الفورم
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // هنا يمكنك إضافة كود إرسال البيانات
+    const submitBtn = this.querySelector('.submit-btn');
+    const originalText = submitBtn.querySelector('span').textContent;
+    
+    submitBtn.querySelector('span').textContent = 'جاري الإرسال...';
+    submitBtn.disabled = true;
+    
+    // محاكاة إرسال البيانات
+    setTimeout(() => {
+        alert('تم إرسال رسالتك بنجاح!');
+        submitBtn.querySelector('span').textContent = originalText;
+        submitBtn.disabled = false;
+        this.reset();
+    }, 2000);
+});
+</script>
     <script src="script.js"></script>
 </body>
 </html>

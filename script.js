@@ -341,10 +341,27 @@ function displayProducts() {
         return;
     }
     
-    container.innerHTML = filteredProducts.map(product => `
+    container.innerHTML = filteredProducts.map(product => {
+        // تحديد مسار الصورة - إذا كانت الصورة غير متوفرة نستخدم أيقونة افتراضية
+        let imageContent;
+        
+        if (product.Image && product.Image !== '' && product.Image !== 'N/A') {
+            // استخدام الصورة الفعلية
+            imageContent = `<img src="${product.Image}" alt="${product.Item_Name}" class="product-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                           <div class="product-icon fallback-icon" style="display: none;">
+                               <i class="fas fa-box"></i>
+                           </div>`;
+        } else {
+            // استخدام الأيقونة الافتراضية
+            imageContent = `<div class="product-icon">
+                               <i class="fas fa-box"></i>
+                           </div>`;
+        }
+        
+        return `
         <div class="product-card" data-product-id="${product.S_NO}">
             <div class="product-image">
-                <i class="fas fa-box"></i>
+                ${imageContent}
             </div>
             <div class="product-info">
                 <div class="product-code">${product.Item_Code}</div>
@@ -356,7 +373,8 @@ function displayProducts() {
                 </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     // إضافة event listeners للبطاقات
     document.querySelectorAll('.product-card').forEach(card => {
@@ -366,6 +384,47 @@ function displayProducts() {
         });
     });
 }
+// function displayProducts() {
+//     const container = document.getElementById('productsContainer');
+    
+//     if (filteredProducts.length === 0) {
+//         container.innerHTML = '<div class="no-products">⚠️ لا توجد منتجات تطابق معايير البحث</div>';
+//         return;
+//     }
+    
+//     container.innerHTML = filteredProducts.map(product => 
+//         `
+        
+//         <div class="product-card" data-product-id="${product.S_NO}">
+//             // <div class="product-image">
+//             //     <i class="fas fa-box"></i>
+//             // </div>
+//               <div class="product-image">
+//                 ${hasImage 
+//                     ? `<img src="${product.Image}" alt="${product.Item_Name}" class="product-img" />`
+//                     : `<div class="product-icon"><i class="fas fa-box"></i></div>`
+//                 }
+//             </div>
+//             <div class="product-info">
+//                 <div class="product-code">${product.Item_Code}</div>
+//                 <h3 class="product-name">${product.Item_Name}</h3>
+//                 <div class="product-group">${product.Item_Group}</div>
+//                 <div class="product-brand">${product.Brand}</div>
+//                 <div class="product-packing" style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+//                     ${product.Packing}
+//                 </div>
+//             </div>
+//         </div>
+//     `).join('');
+    
+//     // إضافة event listeners للبطاقات
+//     document.querySelectorAll('.product-card').forEach(card => {
+//         card.addEventListener('click', function() {
+//             const productId = this.getAttribute('data-product-id');
+//             openProductModal(productId);
+//         });
+//     });
+// }
 
 // تهيئة نموذج الاتصال
 function initializeContactForm() {
@@ -441,8 +500,16 @@ function openProductModal(productId) {
     const modalPacking = document.getElementById('modal-packing');
     
     // تعبئة البيانات
-    modalImg.src = product.Image || 'placeholder.jpg';
-    modalImg.alt = product.Item_Name;
+    // modalImg.src = product.Image || 'placeholder.jpg';
+    // modalImg.alt = product.Item_Name;
+     // التحقق من وجود صورة للمنتج
+    if (product.Image && product.Image !== '' && product.Image !== 'N/A') {
+        modalImg.src = product.Image;
+        modalImg.style.display = 'block';
+        modalImg.alt = product.Item_Name;
+    } else {
+        modalImg.style.display = 'none';
+    }
     modalName.textContent = product.Item_Name;
     modalDescription.textContent = product.Item_Name; // يمكن إضافة وصف مفصل لاحقاً
     modalCode.textContent = product.Item_Code;
