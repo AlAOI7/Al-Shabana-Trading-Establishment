@@ -665,6 +665,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 2000);
 });
 </script>
+      <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuToggle = document.querySelector('.menu-toggle');
+        const mainNav = document.querySelector('.main-nav');
+        const navLinks = document.querySelectorAll('.nav-list a');
+
+        // وظيفة التبديل لفتح وإغلاق القائمة
+        function toggleMenu() {
+            mainNav.classList.toggle('open');
+            menuToggle.classList.toggle('active');
+            // تبديل منع التمرير في الخلفية عند فتح القائمة
+            document.body.classList.toggle('menu-open');
+        }
+
+        // 1. فتح/إغلاق القائمة عند النقر على زر التبديل
+        menuToggle.addEventListener('click', toggleMenu);
+
+        // 2. إغلاق القائمة عند النقر على أي رابط (للتنقل)
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (mainNav.classList.contains('open')) {
+                    toggleMenu();
+                }
+            });
+        });
+    });
+</script>
     <script src="script.js"></script>
 </body>
 </html>
