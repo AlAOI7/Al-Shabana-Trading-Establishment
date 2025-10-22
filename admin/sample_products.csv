@@ -1,0 +1,4 @@
+ID,Name,Description,Price,Category,Stock,Image Path
+,منتج مثال 1,وصف المنتج الأول,100.00,الكترونيات,50,uploads/products/product1.jpg
+,منتج مثال 2,وصف المنتج الثاني,200.00,ملابس,30,uploads/products/product2.jpg
+,منتج مثال 3,وصف المنتج الثالث,150.00,أثاث,20,uploads/products/product3.jpg
