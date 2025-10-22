@@ -4,9 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مؤسسة عبدالرحمن محمد الشبانات التجارية - المنتجات</title>
+     <title>مؤسسة عبدالرحمن محمد الشبانات التجارية - الصفحة الرئيسية</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+
+<style>
+    /* تحسينات لعرض صور المنتجات */
+.product-image {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.product-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-img {
+    transform: scale(1.05);
+}
+
+.product-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.fallback-icon {
+    background: #e9ecef;
+}
+
+.product-code {
+    background: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.product-name {
+    font-size: 1.1rem;
+    margin: 8px 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+.product-group, .product-brand {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 4px 0;
+}
+
+.no-products {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.1rem;
+    color: #666;
+    grid-column: 1 / -1;
+}
+</style>
+
 </head>
 <body>
      <!-- شريط التنقل العلوي -->
@@ -82,7 +157,7 @@
         </div>
     </header>
 
-
+ <main>
     <!-- قسم المنتجات -->
     <section id="products" class="products-section">
         <div class="container">
@@ -109,7 +184,7 @@
             </div>
         </div>
     </section>
-
+</main>
     <!-- الفوتر -->
     <footer class="main-footer">
         <div class="container">
