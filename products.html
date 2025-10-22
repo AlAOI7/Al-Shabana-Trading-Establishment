@@ -84,31 +84,32 @@
 
 
     <!-- قسم المنتجات -->
-    <section id="products" class="products-section">
-        <div class="container">
-            <h2 class="section-title">
-                <span class="title-ar">منتجاتنا</span>
-                <span class="title-en">Our Products</span>
-            </h2>
-            
-            <div class="products-filter">
-                <button class="filter-btn active" data-filter="all" data-ar="الكل" data-en="All">الكل</button>
-                <button class="filter-btn" data-filter="Double Class">Double Class</button>
-                <button class="filter-btn" data-filter="Handles">Handles</button>
-                <button class="filter-btn" data-filter="Cleaning" data-ar="مواد تنظيف" data-en="Cleaning">مواد تنظيف</button>
-                <button class="filter-btn" data-filter="Energy" data-ar="طاقة" data-en="Energy">طاقة</button>
+    <!-- قسم المنتجات -->
+        <section id="products" class="products-section">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-ar">منتجاتنا</span>
+                    <span class="title-en">Our Products</span>
+                </h2>
+                
+                <div class="products-filter">
+                    <button class="filter-btn active" data-filter="all" data-ar="الكل" data-en="All">الكل</button>
+                    <button class="filter-btn" data-filter="Double Class">Double Class</button>
+                    <button class="filter-btn" data-filter="Handles">Handles</button>
+                    <button class="filter-btn" data-filter="Cleaning" data-ar="مواد تنظيف" data-en="Cleaning">مواد تنظيف</button>
+                    <button class="filter-btn" data-filter="Energy" data-ar="طاقة" data-en="Energy">طاقة</button>
+                </div>
+                
+                <div class="products-grid" id="productsContainer">
+                    <!-- سيتم تعبئة المنتجات ديناميكياً من JavaScript -->
+                </div>
+                
+                <div class="products-loading">
+                    <div class="loading-spinner"></div>
+                    <p data-ar="جاري تحميل المنتجات..." data-en="Loading products...">جاري تحميل المنتجات...</p>
+                </div>
             </div>
-            
-            <div class="products-grid" id="productsContainer">
-                <!-- سيتم تعبئة المنتجات ديناميكياً من JavaScript -->
-            </div>
-            
-            <div class="products-loading">
-                <div class="loading-spinner"></div>
-                <p data-ar="جاري تحميل المنتجات..." data-en="Loading products...">جاري تحميل المنتجات...</p>
-            </div>
-        </div>
-    </section>
+        </section>
 
     <!-- الفوتر -->
     <footer class="main-footer">
@@ -200,4 +201,5 @@
 
      <script src="script.js"></script>
 </body>
+
 </html>
