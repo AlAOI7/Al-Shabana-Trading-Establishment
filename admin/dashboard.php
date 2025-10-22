@@ -1,6 +1,10 @@
 <?php
 require_once '../config.php';
-requireAdmin();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
+    header("Location: ../login.php");
+    exit();
+}
 
 // إحصائيات سريعة
 $stmt = $pdo->query("SELECT COUNT(*) as total_users FROM users WHERE user_type = 'client'");

@@ -1,69 +1,96 @@
 <?php
 require_once 'config.php';
 ?>
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الصفحة الرئيسية</title>
+    <title>مؤسسة عبدالرحمن محمد الشبانات التجارية - الصفحة الرئيسية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .hero-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 100px 0;
-            text-align: center;
-        }
-        
-        .hero-section h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        
-        .hero-section p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-        
-        .features-section {
-            padding: 80px 0;
-            background: #f8f9fa;
-        }
-        
-        .feature-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-10px);
-        }
-        
-        .feature-icon {
-            font-size: 3rem;
-            color: #667eea;
-            margin-bottom: 1rem;
-        }
-    </style>
 </head>
+<style>
+                /* تحسينات لعرض صور المنتجات */
+            .product-image {
+                position: relative;
+                width: 100%;
+                height: 200px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f8f9fa;
+                border-radius: 8px;
+                overflow: hidden;
+                margin-bottom: 15px;
+            }
+
+            .product-img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                transition: transform 0.3s ease;
+            }
+
+            .product-card:hover .product-img {
+                transform: scale(1.05);
+            }
+
+            .product-icon {
+                font-size: 3rem;
+                color: #6c757d;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+            }
+
+            .fallback-icon {
+                background: #e9ecef;
+            }
+
+            .product-code {
+                background: #007bff;
+                color: white;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                display: inline-block;
+                margin-bottom: 8px;
+            }
+
+            .product-name {
+                font-size: 1.1rem;
+                margin: 8px 0;
+                color: #333;
+                line-height: 1.4;
+            }
+
+            .product-group, .product-brand {
+                font-size: 0.9rem;
+                color: #666;
+                margin: 4px 0;
+            }
+
+            .no-products {
+                text-align: center;
+                padding: 40px;
+                font-size: 1.1rem;
+                color: #666;
+                grid-column: 1 / -1;
+            }
+</style>
+
 <body>
-    <!-- شريط التنقل -->
-    <header class="header">
+    <!-- شريط التنقل العلوي -->
+    <div class="top-bar">
         <div class="container">
-            <nav class="navbar">
-                <div class="logo">
-                    <i class="fas fa-store"></i> متجرنا
-                </div>
-                <ul class="nav-links">
-                    <?php if (isLoggedIn()): ?>
+            <div class="top-bar-content">
+                <div class="welcome-text" data-ar="مرحباً بكم في مؤسسة الشبانات التجارية" data-en="Welcome to Al Shabana Trading Establishment">مرحباً بكم في مؤسسة الشبانات التجارية</div>
+                 <?php if (isLoggedIn()): ?>
                         <li><span style="color: #fff;">مرحباً، <?php echo $_SESSION['full_name']; ?></span></li>
                         <?php if (isAdmin()): ?>
                             <li><a href="admin/dashboard.php">لوحة التحكم</a></li>
@@ -75,74 +102,612 @@ require_once 'config.php';
                         <li><a href="login.php">تسجيل الدخول</a></li>
                         <li><a href="register.php">إنشاء حساب</a></li>
                     <?php endif; ?>
-                    <li><a href="#features">المميزات</a></li>
-                    <li><a href="#about">من نحن</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <!-- قسم البطل -->
-    <section class="hero-section">
-        <div class="container">
-            <h1>مرحباً بك في متجرنا الإلكتروني</h1>
-            <p>اكتشف أحدث المنتجات والعروض الحصرية</p>
-            <?php if (!isLoggedIn()): ?>
-                <a href="register.php" class="btn btn-primary" style="margin: 0 10px;">
-                    <i class="fas fa-user-plus"></i> انضم إلينا الآن
-                </a>
-                <a href="login.php" class="btn btn-secondary">
-                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
-                </a>
-            <?php else: ?>
-                <a href="<?php echo isAdmin() ? 'admin/dashboard.php' : 'client/dashboard.php'; ?>" class="btn btn-primary">
-                    <i class="fas fa-tachometer-alt"></i> الانتقال إلى لوحة التحكم
-                </a>
-            <?php endif; ?>
-        </div>
-    </section>
-
-    <!-- قسم المميزات -->
-    <section id="features" class="features-section">
-        <div class="container">
-            <h2 style="text-align: center; margin-bottom: 3rem;">مميزات منصتنا</h2>
-            <div class="row">
-                <div class="col-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <h3>تسوق سهل</h3>
-                        <p>تجربة تسوق سلسة وسهلة مع واجهة مستخدم بديهية</p>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h3>آمن ومضمون</h3>
-                        <p>نحن نحمي بياناتك ونضمن معاملات آمنة</p>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-headset"></i>
-                        </div>
-                        <h3>دعم فني</h3>
-                        <p>فريق دعم فني متاح لمساعدتك على مدار الساعة</p>
+                <div class="top-bar-actions">
+                    <button id="languageToggle" class="lang-btn">
+                        <i class="fas fa-globe"></i>
+                        <span class="lang-text">EN</span>
+                    </button>
+                    <div class="contact-top">
+                        <a href="tel:+966555382875"><i class="fas fa-phone"></i> +966555382875</a>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- الهيدر الرئيسي -->
+      <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="2.png" alt="شعار مؤسسة الشبانات" class="logo-image">
+                    <div class="logo-text">
+                        <span class="logo-main" data-ar="مؤسسة الشبانات التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانات التجارية</span>
+                        <span class="logo-sub">Al Shabana Trading Establishment</span>
+                    </div>
+                </div>
+                
+                <nav class="main-nav">
+                    <ul class="nav-list">
+                        <li><a href="index.html" class="nav-link active">
+                            <i class="fas fa-home"></i> 
+                            <span data-ar="الرئيسية" data-en="Home">الرئيسية</span>
+                        </a></li>
+                        <li><a href="about.html" class="nav-link">
+                            <i class="fas fa-building"></i> 
+                            <span data-ar="من نحن" data-en="About">عنا</span>
+                        </a></li>
+                        <li><a href="products.html" class="nav-link">
+                            <i class="fas fa-box-open"></i> 
+                            <span data-ar="المنتجات" data-en="Products">المنتجات</span>
+                        </a></li>
+                         
+                        <li><a href="#stats" class="nav-link">
+                            <i class="fas fa-chart-bar"></i> 
+                            <span data-ar="الإحصائيات" data-en="Statistics">الإحصائيات</span>
+                        </a></li>
+                        <li><a href="#brands" class="nav-link">
+                            <i class="fas fa-tags"></i> 
+                            <span data-ar="العلامات" data-en="Brands">العلامات</span>
+                        </a></li>
+                        <li><a href="contact.html" class="nav-link">
+                            <i class="fas fa-envelope"></i> 
+                            <span data-ar="اتصل بنا" data-en="Contact">اتصل بنا</span>
+                        </a></li>
+                    </ul>
+                </nav>
+
+                <div class="header-actions">
+                    <button class="search-btn" aria-label="بحث">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="menu-toggle" aria-label="قائمة التنقل">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+    <!-- قسم الهيرو المتحرك -->
+    <section id="hero" class="hero-slider">
+        <div class="hero-background">
+            <div class="floating-shapes">
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+                <div class="shape shape-4"></div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title animate-fade-in">
+                        <span class="title-main" data-ar="مؤسسة عبدالرحمن محمد الشبانات التجارية" data-en="Al Rahman Mohammed Al Shabana Trading Est.">مؤسسة عبدالرحمن محمد الشبانات التجارية</span>
+                        <span class="title-sub">Al Rahman Mohammed Al Shabana Trading Est.</span>
+                    </h1>
+                    <h2 class="hero-subtitle animate-fade-in-delay" data-ar="شريكك الموثوق لتأمين مستلزمات المنزل الأساسية" data-en="Your Trusted Partner for Essential Household Supplies">شريكك الموثوق لتأمين مستلزمات المنزل الأساسية</h2>
+                    <p class="hero-description animate-fade-in-delay-2" data-ar="نجمع بين تقاليد الطاقة المنزلية الدافئة وتقنيات النقاء والتنظيف الحديثة لتقديم أفضل الحلول لعملائنا الكرام" data-en="We combine traditional home energy warmth with modern purification and cleaning technologies to provide the best solutions for our valued customers">نجمع بين تقاليد الطاقة المنزلية الدافئة وتقنيات النقاء والتنظيف الحديثة لتقديم أفضل الحلول لعملائنا الكرام</p>
+                    <div class="hero-actions animate-fade-in-delay-3">
+                        <a href="products.html" class="cta-button primary">
+                            <span data-ar="تصفح المنتجات" data-en="Browse Products">تصفح المنتجات</span>
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <a href="about.html" class="cta-button secondary">
+                            <span data-ar="تعرف علينا" data-en="About Us">تعرف علينا</span>
+                            <i class="fas fa-user"></i>
+                        </a>
+                         <a href="contact.html" class="cta-button secondary">
+                            <span data-ar="ـواصل  " data-en="About Us">تواصل  معنى  </span>
+                            <i class="fas fa-phone"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="product-showcase">
+                        <div class="showcase-item item-1">
+                            <i class="fas fa-fire"></i>
+                            <span data-ar="الطاقة" data-en="Energy">الطاقة</span>
+                        </div>
+                        <div class="showcase-item item-2">
+                            <i class="fas fa-tint"></i>
+                            <span data-ar="تنقية" data-en="Purification">تنقية</span>
+                        </div>
+                        <div class="showcase-item item-3">
+                            <i class="fas fa-spray-can"></i>
+                            <span data-ar="تنظيف" data-en="Cleaning">تنظيف</span>
+                        </div>
+                        <div class="showcase-item item-4">
+                            <i class="fas fa-box"></i>
+                            <span data-ar="مستلزمات" data-en="Supplies">مستلزمات</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div class="scroll-arrow"></div>
+        </div>
     </section>
 
+    <main>
+        <!-- قسم من نحن -->
+        <section id="about" class="about-section">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-ar">من نحن</span>
+                    <span class="title-en">About Us</span>
+                </h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <div class="company-description">
+                            <p data-ar="تأسست مؤسسة عبدالرحمن محمد الشبانات التجارية لتكون رائدة في توفير مستلزمات المنزل الأساسية. نحن نجمع بين الطاقة المنزلية الدافئة (الفحم وأخشاب الوقود) وبين حلول النقاء والتنظيف الحديثة (أجهزة تنقية المياه ومواد التنظيف)." data-en="Al Rahman Mohammed Al Shabana Trading Establishment was founded to be a leader in providing essential household supplies. We combine warm home energy (coal and fuel wood) with modern purity and cleaning solutions (water purification devices and cleaning materials).">تأسست مؤسسة عبدالرحمن محمد الشبانات التجارية لتكون رائدة في توفير مستلزمات المنزل الأساسية. نحن نجمع بين <strong data-ar="الطاقة المنزلية الدافئة" data-en="warm home energy">الطاقة المنزلية الدافئة</strong> (الفحم وأخشاب الوقود) وبين <strong data-ar="حلول النقاء والتنظيف الحديثة" data-en="modern purity and cleaning solutions">حلول النقاء والتنظيف الحديثة</strong> (أجهزة تنقية المياه ومواد التنظيف).</p>
+                        </div>
+                        
+                        <div class="mission-vision-grid">
+                            <div class="mission-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-bullseye"></i>
+                                </div>
+                                <h3 data-ar="رسالتنا" data-en="Our Mission">رسالتنا</h3>
+                                <p data-ar="توفير تشكيلة متكاملة وموثوقة من المنتجات بأسعار تنافسية وخدمة متميزة." data-en="Providing a comprehensive and reliable range of products at competitive prices with exceptional service.">توفير تشكيلة متكاملة وموثوقة من المنتجات بأسعار تنافسية وخدمة متميزة.</p>
+                            </div>
+                            <div class="vision-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-eye"></i>
+                                </div>
+                                <h3 data-ar="رؤيتنا" data-en="Our Vision">رؤيتنا</h3>
+                                <p data-ar="أن نكون الخيار الأول في قطاع البيع بالتجزئة للمستلزمات المنزلية في المنطقة." data-en="To be the first choice in the retail sector for household supplies in the region.">أن نكون الخيار الأول في قطاع البيع بالتجزئة للمستلزمات المنزلية في المنطقة.</p>
+                            </div>
+                            <div class="values-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <h3 data-ar="قيمنا" data-en="Our Values">قيمنا</h3>
+                                <p data-ar="الجودة، المصداقية، الابتكار، والالتزام برضا العملاء." data-en="Quality, Credibility, Innovation, and Commitment to Customer Satisfaction.">الجودة، المصداقية، الابتكار، والالتزام برضا العملاء.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="about-visual">
+                        <div class="floating-cards">
+                            <div class="floating-card card-1">
+                                <i class="fas fa-award"></i>
+                                <span data-ar="جودة عالية" data-en="High Quality">جودة عالية</span>
+                            </div>
+                            <div class="floating-card card-2">
+                                <i class="fas fa-users"></i>
+                                <span data-ar="ثقة العملاء" data-en="Customer Trust">ثقة العملاء</span>
+                            </div>
+                            <div class="floating-card card-3">
+                                <i class="fas fa-shipping-fast"></i>
+                                <span data-ar="توصيل سريع" data-en="Fast Delivery">توصيل سريع</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- قسم الإحصائيات والرسوم البيانية -->
+        <section id="stats" class="stats-section">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-ar">إحصائياتنا</span>
+                    <span class="title-en">Our Statistics</span>
+                </h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" data-count="6532">6532</div>
+                            <div class="stat-label" data-ar="منتج متوفر" data-en="Available Products">منتج متوفر</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" data-count="2506">2506</div>
+                            <div class="stat-label" data-ar="عميل راضي" data-en="Satisfied Customers">عميل راضي</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" data-count="15">15</div>
+                            <div class="stat-label" data-ar="عام من الخبرة" data-en="Years of Experience">عام من الخبرة</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" data-count="5000">5000</div>
+                            <div class="stat-label" data-ar="توصيل شهري" data-en="Monthly Deliveries">توصيل شهري</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="productsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- قسم المنتجات -->
+        <section id="products" class="products-section">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-ar">منتجاتنا</span>
+                    <span class="title-en">Our Products</span>
+                </h2>
+                
+                <div class="products-filter">
+                    <button class="filter-btn active" data-filter="all" data-ar="الكل" data-en="All">الكل</button>
+                    <button class="filter-btn" data-filter="Double Class">Double Class</button>
+                    <button class="filter-btn" data-filter="Handles">Handles</button>
+                    <button class="filter-btn" data-filter="Cleaning" data-ar="مواد تنظيف" data-en="Cleaning">مواد تنظيف</button>
+                    <button class="filter-btn" data-filter="Energy" data-ar="طاقة" data-en="Energy">طاقة</button>
+                </div>
+                
+                <div class="products-grid" id="productsContainer">
+                    <!-- سيتم تعبئة المنتجات ديناميكياً من JavaScript -->
+                </div>
+                
+                <div class="products-loading">
+                    <div class="loading-spinner"></div>
+                    <p data-ar="جاري تحميل المنتجات..." data-en="Loading products...">جاري تحميل المنتجات...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- قسم العلامات التجارية -->
+        <section id="brands" class="brands-section">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-ar">علاماتنا التجارية</span>
+                    <span class="title-en">Our Brands</span>
+                </h2>
+                
+                <div class="brands-slider">
+                    <div class="brands-track">
+                        <div class="brand-item">
+                            <div class="brand-logo">
+                                <i class="fas fa-crown"></i>
+                            </div>
+                            <span class="brand-name">Double Class</span>
+                        </div>
+                        <div class="brand-item">
+                            <div class="brand-logo">
+                                <i class="fas fa-gem"></i>
+                            </div>
+                            <span class="brand-name">Gator</span>
+                        </div>
+                        <div class="brand-item">
+                            <div class="brand-logo">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span class="brand-name">Premium</span>
+                        </div>
+                        <div class="brand-item">
+                            <div class="brand-logo">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <span class="brand-name">Shield</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- قسم اتصل بنا -->
+        <section id="contact" class="contact-section">
+            <div class="container">
+                <h2 class="section-title">
+                    <span class="title-ar">اتصل بنا</span>
+                    <span class="title-en">Contact Us</span>
+                </h2>
+                
+                <div class="contact-grid">
+                    <div class="contact-info">
+                        <div class="contact-card">
+                            <div class="contact-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="contact-details">
+                                <h3 data-ar="العنوان" data-en="Address">العنوان</h3>
+                                <p data-ar="المملكة العربية السعودية - الرياض" data-en="Saudi Arabia - Riyadh">المملكة العربية السعودية - الرياض</p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-card">
+                            <div class="contact-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="contact-details">
+                                <h3 data-ar="هاتف" data-en="Phone">هاتف</h3>
+                                <p>+966555382875</p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-card">
+                            <div class="contact-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="contact-details">
+                                <h3 data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</h3>
+                                <p>amnt.est.sa@gmail.com</p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-card">
+                            <div class="contact-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="contact-details">
+                                <h3 data-ar="أوقات العمل" data-en="Working Hours">أوقات العمل</h3>
+                                <p data-ar="السبت - الخميس: 9:00 ص - 6:00 م" data-en="Saturday - Thursday: 9:00 AM - 6:00 PM">السبت - الخميس: 9:00 ص - 6:00 م</p>
+                            </div>
+                        </div>
+                        
+                        <div class="social-links">
+                            <a href="#" class="social-link whatsapp">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="#" class="social-link twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="#" class="social-link instagram">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="social-link facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <input type="text" id="name" name="name" required>
+                            <label for="name" data-ar="الاسم الكريم" data-en="Your Name">الاسم الكريم</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <input type="email" id="email" name="email" required>
+                            <label for="email" data-ar="البريد الإلكتروني" data-en="Email Address">البريد الإلكتروني</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <input type="tel" id="phone" name="phone">
+                            <label for="phone" data-ar="رقم الهاتف" data-en="Phone Number">رقم الهاتف</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                            <label for="message" data-ar="رسالتك" data-en="Your Message">رسالتك</label>
+                        </div>
+                        
+                        <button type="submit" class="submit-btn">
+                            <span data-ar="إرسال الرسالة" data-en="Send Message">إرسال الرسالة</span>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
     <!-- الفوتر -->
-    <footer style="background: var(--dark-color); color: white; padding: 2rem 0; text-align: center;">
+    <footer class="main-footer">
         <div class="container">
-            <p>&copy; 2024 متجرنا الإلكتروني. جميع الحقوق محفوظة.</p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="2.png" alt="شعار مؤسسة الشبانات">
+                        <span data-ar="مؤسسة الشبانات التجارية" data-en="Al Shabana Trading Establishment">مؤسسة الشبانات التجارية</span>
+                    </div>
+                    <p class="footer-description" data-ar="شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010" data-en="Your trusted partner in providing essential household supplies since 2010">شريكك الموثوق في توفير مستلزمات المنزل الأساسية منذ عام 2010</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h3>
+                    <ul class="footer-links">
+                        <li><a href="#about" data-ar="من نحن" data-en="About Us">من نحن</a></li>
+                        <li><a href="#products" data-ar="المنتجات" data-en="Products">المنتجات</a></li>
+                        <li><a href="#brands" data-ar="العلامات" data-en="Brands">العلامات</a></li>
+                        <li><a href="#contact" data-ar="اتصل بنا" data-en="Contact">اتصل بنا</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="المنتجات" data-en="Products">المنتجات</h3>
+                    <ul class="footer-links">
+                        <li><a href="#" data-ar="الطاقة والوقود" data-en="Energy & Fuel">الطاقة والوقود</a></li>
+                        <li><a href="#" data-ar="تنقية المياه" data-en="Water Purification">تنقية المياه</a></li>
+                        <li><a href="#" data-ar="مواد التنظيف" data-en="Cleaning Materials">مواد التنظيف</a></li>
+                        <li><a href="#" data-ar="المستلزمات" data-en="Supplies">المستلزمات</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 data-ar="اشترك في النشرة" data-en="Subscribe to Newsletter">اشترك في النشرة</h3>
+                    <form class="newsletter-form">
+                        <input type="email" placeholder="بريدك الإلكتروني" data-ar-placeholder="بريدك الإلكتروني" data-en-placeholder="Your Email" required>
+                        <button type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p data-ar="&copy; 2024 مؤسسة عبدالرحمن محمد الشبانات التجارية. جميع الحقوق محفوظة." data-en="&copy; 2024 Al Rahman Mohammed Al Shabana Trading Establishment. All rights reserved.">&copy; 2024 مؤسسة عبدالرحمن محمد الشبانات التجارية. جميع الحقوق محفوظة.</p>
+            </div>
         </div>
     </footer>
+
+    <!-- مودال المنتج -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modal-img" src="" alt="صورة المنتج">
+                </div>
+                <div class="modal-details">
+                    <h3 id="modal-name">اسم المنتج</h3>
+                    <p id="modal-description">وصف المنتج</p>
+                    <div class="product-specs">
+                        <div class="spec-item">
+                            <strong data-ar="الكود:" data-en="Code:">الكود:</strong>
+                            <span id="modal-code"></span>
+                        </div>
+                        <div class="spec-item">
+                            <strong data-ar="المجموعة:" data-en="Group:">المجموعة:</strong>
+                            <span id="modal-group"></span>
+                        </div>
+                        <div class="spec-item">
+                            <strong data-ar="العلامة:" data-en="Brand:">العلامة:</strong>
+                            <span id="modal-brand"></span>
+                        </div>
+                        <div class="spec-item">
+                            <strong data-ar="التغليف:" data-en="Packing:">التغليف:</strong>
+                            <span id="modal-packing"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- زر العودة للأعلى -->
+    <button id="scrollToTop" class="scroll-to-top">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+       <script>// تهيئة شريط التنقل - الإصدار المعدل
+   // تهيئة القائمة المتنقلة
+        function initMobileMenu() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            
+            if (menuToggle && mainNav) {
+                menuToggle.addEventListener('click', function() {
+                    mainNav.classList.toggle('active');
+                    menuToggle.classList.toggle('active');
+                });
+            }
+        }
+
+// حل بديل للتأكد من عمل القائمة
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const mainNav = document.querySelector('.main-nav');
+    
+    if (menuToggle && mainNav) {
+        menuToggle.addEventListener('click', function() {
+            console.log('تم النقر على زر القائمة');
+            console.log('الحالة قبل:', mainNav.classList.contains('active'));
+            
+            mainNav.classList.toggle('active');
+            menuToggle.classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+            
+            console.log('الحالة بعد:', mainNav.classList.contains('active'));
+            console.log('أنماط القائمة:', window.getComputedStyle(mainNav).display);
+        });
+        
+        // إغلاق القائمة عند النقر على أي رابط
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    mainNav.classList.remove('active');
+                    menuToggle.classList.remove('active');
+                    document.body.classList.remove('menu-open');
+                }
+            });
+        });
+    }
+});
+    </script>
+<script>// دالة لتغيير اللغة
+    function changeLanguage(lang) {
+    // تحديث النصوص في معلومات الاتصال
+    document.querySelectorAll('[data-ar][data-en]').forEach(element => {
+        element.textContent = element.getAttribute(`data-${lang}`);
+    });
+    
+    // تحديث النصوص في الفورم
+    document.querySelectorAll('label[data-ar][data-en]').forEach(label => {
+        label.textContent = label.getAttribute(`data-${lang}`);
+    });
+    
+    // تحديد اتجاه الصفحة
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+}
+
+        // تهيئة الفورم
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // هنا يمكنك إضافة كود إرسال البيانات
+    const submitBtn = this.querySelector('.submit-btn');
+    const originalText = submitBtn.querySelector('span').textContent;
+    
+    submitBtn.querySelector('span').textContent = 'جاري الإرسال...';
+    submitBtn.disabled = true;
+    
+    // محاكاة إرسال البيانات
+    setTimeout(() => {
+        alert('تم إرسال رسالتك بنجاح!');
+        submitBtn.querySelector('span').textContent = originalText;
+        submitBtn.disabled = false;
+        this.reset();
+    }, 2000);
+});
+</script>
+      <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuToggle = document.querySelector('.menu-toggle');
+        const mainNav = document.querySelector('.main-nav');
+        const navLinks = document.querySelectorAll('.nav-list a');
+
+        // وظيفة التبديل لفتح وإغلاق القائمة
+        function toggleMenu() {
+            mainNav.classList.toggle('open');
+            menuToggle.classList.toggle('active');
+            // تبديل منع التمرير في الخلفية عند فتح القائمة
+            document.body.classList.toggle('menu-open');
+        }
+
+        // 1. فتح/إغلاق القائمة عند النقر على زر التبديل
+        menuToggle.addEventListener('click', toggleMenu);
+
+        // 2. إغلاق القائمة عند النقر على أي رابط (للتنقل)
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (mainNav.classList.contains('open')) {
+                    toggleMenu();
+                }
+            });
+        });
+    });
+</script>
+    <script src="script.js"></script>
 </body>
 </html>
