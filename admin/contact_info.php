@@ -1,6 +1,9 @@
-<?php
 require_once '../config.php';
-requireAdmin();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
+    header("Location: ../login.php");
+    exit();
+}
 
 // جلب بيانات التواصل
 $stmt = $pdo->query("SELECT * FROM contact_info LIMIT 1");

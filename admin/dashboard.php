@@ -509,7 +509,7 @@ $recent_users = $stmt->fetchAll();
                         <i class="fas fa-concierge-bell"></i>
                     </div>
                     <div class="stat-content">
-                        <h3><?php echo $total_services; ?></h3>
+                        <!-- <h3><?php echo $total_services; ?></h3> -->
                         <p>إجمالي الخدمات</p>
                     </div>
                 </div>

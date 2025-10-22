@@ -1,6 +1,10 @@
 <?php
 require_once '../config.php';
-requireAdmin();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
+    header("Location: ../login.php");
+    exit();
+}
 
 // جلب جميع المستخدمين
 $stmt = $pdo->query("SELECT * FROM users ORDER BY created_at DESC");
