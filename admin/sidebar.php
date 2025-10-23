@@ -1,39 +1,106 @@
 <?php
 // sidebar.php - يمكن تضمينه في جميع صفحات الأدمن
+// يجب أن تكون $_SESSION['full_name'] متوفرة
+// يجب أن يكون $current_page_basename متوفرة لتعيين الحالة النشطة
+
+// نصوص الترجمة
+$sidebar_translations = [
+    'ar' => [
+        'dashboard' => 'لوحة التحكم',
+        'welcome' => 'مرحباً،',
+        'home' => 'الرئيسية',
+        'user_management' => 'إدارة المستخدمين',
+        'product_management' => 'إدارة المنتجات',
+        'service_management' => 'إدارة الخدمات',
+        'order_management' => 'إدارة الطلبات',
+        'about_us' => 'من نحن',
+        'contact_info' => 'بيانات التواصل',
+        'import_export' => 'استيراد / تصدير البيانات', 
+        'settings' => 'الإعدادات',
+        'logout' => 'تسجيل الخروج'
+    ],
+    'en' => [
+        'dashboard' => 'Dashboard',
+        'welcome' => 'Welcome,',
+        'home' => 'Home',
+        'user_management' => 'User Management',
+        'product_management' => 'Product Management',
+        'service_management' => 'Service Management',
+        'order_management' => 'Order Management',
+        'about_us' => 'About Us',
+        'contact_info' => 'Contact Info',
+           'import_export' => 'Import / Export Data',
+        'settings' => 'Settings',
+        'logout' => 'Logout'
+    ]
+];
+
+// تحديد اللغة الحالية
+$currentLang = isset($_SESSION['language']) ? $_SESSION['language'] : 'ar';
+
+// القائمة حسب اللغة
+$menu_items = [
+    'dashboard.php' => [
+        'icon' => 'fas fa-home',
+        'text_key' => 'home'
+    ],
+    'users.php' => [
+        'icon' => 'fas fa-users',
+        'text_key' => 'user_management'
+    ],
+    'products.php' => [
+        'icon' => 'fas fa-box',
+        'text_key' => 'product_management'
+    ],
+    'services.php' => [
+        'icon' => 'fas fa-concierge-bell',
+        'text_key' => 'service_management'
+    ],
+    'orders.php' => [
+        'icon' => 'fas fa-shopping-cart',
+        'text_key' => 'order_management'
+    ],
+    'about.php' => [
+        'icon' => 'fas fa-info-circle',
+        'text_key' => 'about_us'
+    ],
+        'import_export.php' => [
+        'icon' => 'fas fa-file-import',
+        'text_key' => 'import_export'
+    ],
+
+    'contact_info.php' => [
+        'icon' => 'fas fa-address-book',
+        'text_key' => 'contact_info'
+    ],
+    'settings.php' => [
+        'icon' => 'fas fa-cogs',
+        'text_key' => 'settings'
+    ]
+];
 ?>
-<aside class="sidebar">
+
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h3><i class="fas fa-tachometer-alt"></i> لوحة التحكم</h3>
-        <p>مرحباً، <?php echo $_SESSION['full_name']; ?></p>
+        <h3><i class="fas fa-tachometer-alt"></i> <span data-translate="dashboard"><?php echo $sidebar_translations[$currentLang]['dashboard']; ?></span></h3>
+        <p><span data-translate="welcome"><?php echo $sidebar_translations[$currentLang]['welcome']; ?></span> <?php echo $_SESSION['full_name'] ?? 'Admin'; ?></p>
     </div>
     
     <ul class="sidebar-menu">
-        <li><a href="dashboard.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>">
-            <i class="fas fa-home"></i> الرئيسية
-        </a></li>
-        <li><a href="users.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'users.php' ? 'active' : ''; ?>">
-            <i class="fas fa-users"></i> إدارة المستخدمين
-        </a></li>
-        <li><a href="products.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'products.php' ? 'active' : ''; ?>">
-            <i class="fas fa-box"></i> إدارة المنتجات
-        </a></li>
-        <li><a href="services.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'services.php' ? 'active' : ''; ?>">
-            <i class="fas fa-concierge-bell"></i> إدارة الخدمات
-        </a></li>
-        <li><a href="orders.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'orders.php' ? 'active' : ''; ?>">
-            <i class="fas fa-shopping-cart"></i> إدارة الطلبات
-        </a></li>
-        <li><a href="about.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'about.php' ? 'active' : ''; ?>">
-            <i class="fas fa-info-circle"></i> من نحن
-        </a></li>
-        <li><a href="contact_info.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'contact_info.php' ? 'active' : ''; ?>">
-            <i class="fas fa-address-book"></i> بيانات التواصل
-        </a></li>
-        <li><a href="settings.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
-            <i class="fas fa-cogs"></i> الإعدادات
-        </a></li>
-        <li><a href="../logout.php">
-            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-        </a></li>
+        <?php foreach ($menu_items as $file => $item): ?>
+            <li>
+                <a href="<?php echo $file; ?>" class="<?php echo basename($_SERVER['PHP_SELF']) == $file ? 'active' : ''; ?>">
+                    <i class="<?php echo $item['icon']; ?>"></i> 
+                    <span data-translate="<?php echo $item['text_key']; ?>"><?php echo $sidebar_translations[$currentLang][$item['text_key']]; ?></span>
+                </a>
+            </li>
+        <?php endforeach; ?>
+        
+        <li>
+            <a href="../logout.php">
+                <i class="fas fa-sign-out-alt"></i> 
+                <span data-translate="logout"><?php echo $sidebar_translations[$currentLang]['logout']; ?></span>
+            </a>
+        </li>
     </ul>
 </aside>

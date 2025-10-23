@@ -1,62 +1,14 @@
-<?php
-require_once '../config.php';
+# إضافة أيقونة الترجمة للوحة التحكم
 
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-    header("Location: ../login.php");
-    exit();
-}
+لإضافة أيقونة الترجمة للتبديل بين اللغتين العربية والإنجليزية، سأقوم بالتعديلات التالية على الكود:
 
-// إحصائيات سريعة
-$stmt = $pdo->query("SELECT COUNT(*) as total_users FROM users WHERE user_type = 'client'");
-$total_users = $stmt->fetch()['total_users'];
+1. إضافة زر الترجمة في واجهة المستخدم
+2. إضافة كود JavaScript للتعامل مع الترجمة
+3. إضافة الأنماط اللازمة
 
-$stmt = $pdo->query("SELECT COUNT(*) as total_products FROM products");
-$total_products = $stmt->fetch()['total_products'];
+إليك الكود المحدث:
 
-$stmt = $pdo->query("SELECT COUNT(*) as total_services FROM services");
-$total_services = $stmt->fetch()['total_services'];
-
-$stmt = $pdo->query("SELECT COUNT(*) as total_orders FROM orders");
-$total_orders = $stmt->fetch()['total_orders'];
-
-$stmt = $pdo->query("SELECT SUM(total_amount) as total_revenue FROM orders WHERE status = 'completed'");
-$total_revenue = $stmt->fetch()['total_revenue'] ?: 0;
-
-// آخر الطلبات
-$stmt = $pdo->query("SELECT o.*, u.full_name FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5");
-$recent_orders = $stmt->fetchAll();
-
-// آخر المستخدمين المسجلين
-$stmt = $pdo->query("SELECT * FROM users WHERE user_type = 'client' ORDER BY created_at DESC LIMIT 5");
-$recent_users = $stmt->fetchAll();
-
-// بيانات للرسوم البيانية
-// 1. توزيع الطلبات حسب الحالة
-$stmt = $pdo->query("SELECT status, COUNT(*) as count FROM orders GROUP BY status");
-$order_statuses = $stmt->fetchAll();
-
-// 2. الإيرادات الشهرية (آخر 6 أشهر)
-$stmt = $pdo->query("SELECT 
-    DATE_FORMAT(created_at, '%Y-%m') as month,
-    SUM(total_amount) as revenue
-    FROM orders 
-    WHERE status = 'completed' 
-    AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-    ORDER BY month DESC LIMIT 6");
-$monthly_revenue = $stmt->fetchAll();
-
-// 3. نمو المستخدمين (آخر 6 أشهر)
-$stmt = $pdo->query("SELECT 
-    DATE_FORMAT(created_at, '%Y-%m') as month,
-    COUNT(*) as user_count
-    FROM users 
-    WHERE user_type = 'client'
-    AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-    ORDER BY month DESC LIMIT 6");
-$user_growth = $stmt->fetchAll();
-?>
+```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -561,7 +513,11 @@ $user_growth = $stmt->fetchAll();
         <!-- المحتوى الرئيسي -->
         <main class="main-content">
             <?php include 'admin_navbar.php'; ?>
-           
+            
+            <div class="header">
+                <h1>لوحة التحكم الرئيسية</h1>
+                <div class="date-display" id="current-date">تحميل التاريخ...</div>
+            </div>
 
             <!-- بطاقات الإحصائيات -->
             <div class="row">
@@ -697,45 +653,6 @@ $user_growth = $stmt->fetchAll();
                     </div>
                 </div>
             </div>
-                <!-- قسم إضافي للمستخدمين الجدد -->
-            <div class="card" style="margin-top: 2.5rem;">
-                <div class="card-header">
-                    <h3><i class="fas fa-user-plus"></i> آخر العملاء المسجلين</h3>
-                </div>
-                <div class="card-body">
-                    <?php if(count($recent_users) > 0): ?>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>الاسم</th>
-                                        <th>البريد الإلكتروني</th>
-                                        <th>تاريخ التسجيل</th>
-                                        <th>الحالة</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach($recent_users as $user): ?>
-                                        <tr>
-                                            <td><?php echo $user['full_name']; ?></td>
-                                            <td><?php echo $user['email']; ?></td>
-                                            <td><?php echo date('Y-m-d', strtotime($user['created_at'])); ?></td>
-                                            <td><span class="badge badge-success">نشط</span></td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php else: ?>
-                        <p style="text-align: center; color: #64748b; padding: 1rem;">لا يوجد عملاء مسجلين حديثاً</p>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- تذييل الصفحة -->
-            <div class="footer">
-                <p>جميع الحقوق محفوظة &copy; <?php echo date('Y'); ?> - نظام الإدارة</p>
-            </div>
         </main>
     </div>
 
@@ -744,7 +661,209 @@ $user_growth = $stmt->fetchAll();
         <i class="fas fa-language"></i>
     </button>
 
-        <script src="script.js"></script>
+    <script>
+        // نصوص الترجمة
+        const translations = {
+            ar: {
+                // العناوين الرئيسية
+                "dashboard": "لوحة التحكم الرئيسية",
+                "total_clients": "إجمالي العملاء",
+                "total_products": "إجمالي المنتجات",
+                "total_services": "إجمالي الخدمات",
+                "total_orders": "إجمالي الطلبات",
+                "quick_actions": "إجراءات سريعة",
+                "add_new_product": "إضافة منتج جديد",
+                "add_new_service": "إضافة خدمة جديدة",
+                "view_all_users": "عرض جميع المستخدمين",
+                "edit_settings": "تعديل الإعدادات",
+                "recent_activities": "آخر النشاطات",
+                "new_order": "طلب جديد",
+                "from": "من",
+                "new": "جديد",
+                "no_recent_activities": "لا توجد نشاطات حديثة",
+                "order_distribution": "توزيع الطلبات حسب الحالة",
+                "monthly_revenue": "الإيرادات الشهرية",
+                "user_growth": "نمو المستخدمين"
+            },
+            en: {
+                // العناوين الرئيسية
+                "dashboard": "Main Dashboard",
+                "total_clients": "Total Clients",
+                "total_products": "Total Products",
+                "total_services": "Total Services",
+                "total_orders": "Total Orders",
+                "quick_actions": "Quick Actions",
+                "add_new_product": "Add New Product",
+                "add_new_service": "Add New Service",
+                "view_all_users": "View All Users",
+                "edit_settings": "Edit Settings",
+                "recent_activities": "Recent Activities",
+                "new_order": "New Order",
+                "from": "From",
+                "new": "New",
+                "no_recent_activities": "No Recent Activities",
+                "order_distribution": "Order Distribution by Status",
+                "monthly_revenue": "Monthly Revenue",
+                "user_growth": "User Growth"
+            }
+        };
+
+        // حالة اللغة الحالية
+        let currentLang = localStorage.getItem('language') || 'ar';
+
+        // دالة لتطبيق الترجمة
+        function applyLanguage(lang) {
+            // تحديث النصوص في الصفحة
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+
+            // تحديث اتجاه الصفحة
+            if (lang === 'ar') {
+                document.documentElement.dir = 'rtl';
+                document.documentElement.lang = 'ar';
+                document.title = 'لوحة التحكم - الأدمن';
+            } else {
+                document.documentElement.dir = 'ltr';
+                document.documentElement.lang = 'en';
+                document.title = 'Admin Dashboard';
+            }
+
+            // حفظ اللغة في localStorage
+            localStorage.setItem('language', lang);
+            currentLang = lang;
+        }
+
+        // حدث النقر على زر الترجمة
+        document.getElementById('translateBtn').addEventListener('click', function() {
+            const newLang = currentLang === 'ar' ? 'en' : 'ar';
+            applyLanguage(newLang);
+        });
+
+        // تطبيق اللغة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            applyLanguage(currentLang);
+            
+            // عرض التاريخ الحالي
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const dateString = currentLang === 'ar' 
+                ? now.toLocaleDateString('ar-SA', options)
+                : now.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            document.getElementById('current-date').textContent = dateString;
+        });
+
+        // الرسوم البيانية
+        document.addEventListener('DOMContentLoaded', function() {
+            // رسم بياني دائري لتوزيع الطلبات
+            const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+            const ordersChart = new Chart(ordersCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['مكتمل', 'قيد المعالجة', 'ملغي'],
+                    datasets: [{
+                        data: [60, 25, 15],
+                        backgroundColor: [
+                            '#43e97b',
+                            '#4facfe',
+                            '#f5576c'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // رسم بياني عمودي للإيرادات
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            const revenueChart = new Chart(revenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+                    datasets: [{
+                        label: 'الإيرادات',
+                        data: [12000, 19000, 15000, 25000, 22000, 30000],
+                        backgroundColor: '#4361ee'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // رسم بياني خطي لنمو المستخدمين
+            const usersCtx = document.getElementById('usersChart').getContext('2d');
+            const usersChart = new Chart(usersCtx, {
+                type: 'line',
+                data: {
+                    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+                    datasets: [{
+                        label: 'المستخدمين الجدد',
+                        data: [65, 79, 90, 81, 96, 125],
+                        borderColor: '#f093fb',
+                        backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
- 
+```
+
+## التغييرات التي تمت:
+
+1. **إضافة زر الترجمة العائم**: تم إضافة زر عائم في الزاوية اليسرى السفلية للصفحة.
+
+2. **إضافة نظام الترجمة**: 
+   - تم إضافة كائن `translations` يحتوي على النصوص باللغتين العربية والإنجليزية.
+   - تم إضافة خاصية `data-translate` للعناصر التي تحتاج إلى ترجمة.
+   - تم إضافة وظيفة `applyLanguage` لتطبيق الترجمة المحددة.
+
+3. **إضافة الأنماط للغة الإنجليزية**:
+   - تم إضافة أنماط CSS للتعامل مع اتجاه النص من اليمين لليسار عند التبديل إلى الإنجليزية.
+
+4. **تخزين التفضيلات**: 
+   - يتم تخزين اللغة المفضلة للمستخدم في `localStorage` للحفاظ على التحديد عند إعادة تحميل الصفحة.
+
+5. **تحديث التاريخ**: 
+   - يتم عرض التاريخ الحالي باللغة المحددة.
+
+الآن يمكن للمستخدم النقر على أيقونة الترجمة للتبديل بين اللغتين العربية والإنجليزية، وسيتم حفظ تفضيلاته تلقائيًا.

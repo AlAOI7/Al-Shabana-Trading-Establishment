@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الشعبانات - تسجيل الدخول</title>
+    <title>نظام الشبانات - تسجيل الدخول</title>
     <style>
         * {
             margin: 0;
@@ -75,49 +75,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --error-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --success-color: #4ecdc4;
+            --warning-color: #ffd166;
+            --error-color: #ef476f;
+            --light-color: #f8f9fa;
+            --dark-color: #2b2d42;
             --text-color: #333;
-            --border-color: #ddd;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-color: #e9ecef;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
             line-height: 1.6;
+            animation: backgroundShift 15s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .auth-container {
             width: 100%;
-            max-width: 450px;
+            max-width: 480px;
+            position: relative;
+            z-index: 2;
         }
 
         .auth-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
             overflow: hidden;
-            animation: fadeIn 0.6s ease-out;
+            animation: cardAppear 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(50px) rotateX(10deg);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) rotateX(0);
+            }
         }
 
         .auth-header {
-            background: linear(135deg, var(--primary-color), var(--secondary-color));
+            background: var(--gradient);
             color: white;
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             text-align: center;
             position: relative;
+            overflow: hidden;
         }
 
         .auth-header::before {
@@ -129,6 +156,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             bottom: 0;
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
             background-size: cover;
+            animation: wave 10s linear infinite;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-10px); }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .auth-header h1 {
@@ -137,13 +193,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             position: relative;
         }
 
         .auth-header p {
             opacity: 0.9;
-            font-size: 0.95rem;
+            font-size: 1rem;
             position: relative;
         }
 
@@ -152,31 +208,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .alert {
-            padding: 15px;
-            border-radius: 10px;
+            padding: 15px 20px;
+            border-radius: 12px;
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
             gap: 12px;
             font-size: 0.95rem;
             border: 1px solid;
-            animation: slideDown 0.3s ease;
+            animation: slideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
         }
 
         .alert-error {
-            background: #fee;
+            background: rgba(239, 71, 111, 0.1);
             color: var(--error-color);
-            border-color: #f5c6cb;
+            border-color: rgba(239, 71, 111, 0.2);
+        }
+
+        .alert-error::before {
+            background: var(--error-color);
         }
 
         .alert-success {
-            background: #efffed;
+            background: rgba(78, 205, 196, 0.1);
             color: var(--success-color);
-            border-color: #c3e6cb;
+            border-color: rgba(78, 205, 196, 0.2);
+        }
+
+        .alert-success::before {
+            background: var(--success-color);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.8rem;
             position: relative;
         }
 
@@ -186,6 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
             color: var(--dark-color);
             font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
 
         .input-group {
@@ -196,71 +283,100 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .input-group-icon {
             position: absolute;
-            right: 15px;
+            right: 18px;
             color: #666;
             z-index: 2;
+            transition: all 0.3s ease;
         }
 
         .form-control {
             width: 100%;
-            padding: 15px 50px 15px 15px;
+            padding: 16px 55px 16px 50px;
             border: 2px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 1rem;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             background: white;
             font-family: inherit;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .form-control:focus {
             outline: none;
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-            transform: translateY(-2px);
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .form-control:focus + .input-group-icon {
+            color: var(--primary-color);
+            transform: scale(1.1);
         }
 
         .password-toggle {
             position: absolute;
-            left: 15px;
+            left: 18px;
             background: none;
             border: none;
             color: #666;
             cursor: pointer;
             padding: 5px;
             z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary-color);
+            transform: scale(1.1);
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            padding: 15px 25px;
+            gap: 12px;
+            padding: 16px 28px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             text-decoration: none;
             width: 100%;
             font-family: inherit;
-        }
-
-        .btn-primary {
-            background: linear(135deg, var(--secondary-color), #2980b9);
-            color: white;
             position: relative;
             overflow: hidden;
         }
 
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.7s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
         }
 
         .btn-primary:active {
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
         .auth-footer {
@@ -273,42 +389,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .auth-footer p {
             margin-bottom: 1rem;
             color: #666;
-        }
-
-        .auth-footer a {
-            color: var(--secondary-color);
-            text-decoration: none;
-            font-weight: 600;
             transition: color 0.3s ease;
         }
 
-        .auth-footer a:hover {
+        .auth-footer a {
             color: var(--primary-color);
-            text-decoration: underline;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .auth-footer a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .auth-footer a:hover {
+            color: var(--secondary-color);
+        }
+
+        .auth-footer a:hover::after {
+            width: 100%;
         }
 
         .demo-accounts {
             text-align: center;
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: #f8f9fa;
-            border-radius: 10px;
+            margin-top: 2.5rem;
+            padding: 1.8rem;
+            background: rgba(248, 249, 250, 0.7);
+            border-radius: 15px;
             border: 1px solid var(--border-color);
+            backdrop-filter: blur(5px);
+            animation: fadeInUp 0.6s ease 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .demo-accounts h4 {
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
             color: var(--dark-color);
-            font-size: 1rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .account-list {
             display: grid;
-            gap: 1rem;
+            gap: 1.2rem;
             font-size: 0.9rem;
         }
 
@@ -316,15 +461,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 15px;
+            padding: 15px;
             background: white;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 1px solid #e9ecef;
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .account-item:hover {
             transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
         }
 
         .account-type {
@@ -337,9 +485,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             direction: ltr;
             font-family: monospace;
             background: #f8f9fa;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 10px;
+            border-radius: 6px;
             font-size: 0.85rem;
+            border: 1px solid #e9ecef;
         }
 
         /* التجاوب مع الشاشات الصغيرة */
@@ -353,34 +502,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             .auth-header {
-                padding: 1.5rem;
+                padding: 2rem 1.5rem;
             }
             
             .auth-header h1 {
                 font-size: 1.5rem;
             }
-        }
-
-        /* تأثيرات الحركة */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            
+            .account-item {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
             }
         }
 
@@ -393,8 +525,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-loading::after {
             content: '';
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border: 2px solid transparent;
             border-top: 2px solid white;
             border-radius: 50%;
@@ -406,21 +538,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             100% { transform: rotate(360deg); }
         }
 
-        /* تحسينات إضافية */
-        .logo {
-            text-align: center;
-            margin-bottom: 1rem;
+        /* عناصر عائمة في الخلفية */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
         }
 
-        .logo-text {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary-color);
+        .floating-element {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-1000px) rotate(720deg); }
+        }
+
+        /* تأثيرات إضافية */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(102, 126, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+        }
+
+        /* شريط تقدم كلمة المرور */
+        .password-strength {
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            border-radius: 2px;
+            transition: all 0.4s ease;
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <!-- عناصر عائمة في الخلفية -->
+    <div class="floating-elements" id="floatingElements"></div>
+
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
@@ -432,7 +606,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <div class="auth-body">
-                <?php if ($error): ?>
+                <!-- <?php if ($error): ?>
                     <div class="alert alert-error">
                         <i class="fas fa-exclamation-circle"></i> 
                         <span><?php echo $error; ?></span>
@@ -444,7 +618,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fas fa-check-circle"></i> 
                         <span><?php echo $success; ?></span>
                     </div>
-                <?php endif; ?>
+                <?php endif; ?> -->
                 
                 <form method="POST" id="loginForm">
                     <div class="form-group">
@@ -476,10 +650,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="password-strength-bar"></div>
+                        </div>
                     </div>
                     
                     <div class="form-group">
-                        <button type="submit" class="btn btn-primary" id="loginBtn">
+                        <button type="submit" class="btn btn-primary pulse" id="loginBtn">
                             <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
                         </button>
                     </div>
@@ -508,43 +685,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const icon = input.parentNode.querySelector('.password-toggle i');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fas fa-eye-slash';
-                icon.style.color = '#3498db';
-            } else {
-                input.type = 'password';
-                icon.className = 'fas fa-eye';
-                icon.style.color = '#666';
-            }
-        }
-        
-        // إضافة تأثيرات عند التحميل
+        // إنشاء العناصر العائمة في الخلفية
         document.addEventListener('DOMContentLoaded', function() {
-            const authCard = document.querySelector('.auth-card');
-            authCard.style.opacity = '0';
-            authCard.style.transform = 'translateY(30px)';
+            const floatingContainer = document.getElementById('floatingElements');
+            const colors = ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.15)', 'rgba(255,255,255,0.2)'];
             
-            setTimeout(() => {
-                authCard.style.transition = 'all 0.6s ease';
-                authCard.style.opacity = '1';
-                authCard.style.transform = 'translateY(0)';
-            }, 100);
+            for (let i = 0; i < 15; i++) {
+                const element = document.createElement('div');
+                element.classList.add('floating-element');
+                
+                // أحجام وعناصر عشوائية
+                const size = Math.random() * 100 + 20;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const left = Math.random() * 100;
+                const animationDuration = Math.random() * 20 + 15;
+                
+                element.style.width = `${size}px`;
+                element.style.height = `${size}px`;
+                element.style.background = color;
+                element.style.left = `${left}%`;
+                element.style.animationDuration = `${animationDuration}s`;
+                element.style.animationDelay = `${Math.random() * 5}s`;
+                
+                floatingContainer.appendChild(element);
+            }
             
-            // إضافة تأثير التحميل عند الإرسال
-            const loginForm = document.getElementById('loginForm');
-            const loginBtn = document.getElementById('loginBtn');
-            
-            loginForm.addEventListener('submit', function() {
-                loginBtn.classList.add('btn-loading');
-                loginBtn.disabled = true;
-                loginBtn.innerHTML = '<i class="fas fa-spinner"></i> جاري التسجيل...';
-            });
-
             // تأثيرات عند التركيز على الحقول
             const inputs = document.querySelectorAll('.form-control');
             inputs.forEach(input => {
@@ -560,22 +725,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         });
 
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.parentNode.querySelector('.password-toggle i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+                icon.style.color = '#667eea';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+                icon.style.color = '#666';
+            }
+        }
+        
         // تأثيرات كتابة كلمة السر
         document.getElementById('password').addEventListener('input', function() {
             const strength = this.value.length;
-            const strengthMeter = document.getElementById('password-strength');
-            if (strengthMeter) {
-                if (strength < 4) {
-                    strengthMeter.style.width = '25%';
-                    strengthMeter.style.background = '#e74c3c';
-                } else if (strength < 8) {
-                    strengthMeter.style.width = '50%';
-                    strengthMeter.style.background = '#f39c12';
-                } else {
-                    strengthMeter.style.width = '100%';
-                    strengthMeter.style.background = '#27ae60';
-                }
+            const strengthBar = document.getElementById('password-strength-bar');
+            
+            if (strength < 4) {
+                strengthBar.style.width = '25%';
+                strengthBar.style.background = '#ef476f';
+            } else if (strength < 8) {
+                strengthBar.style.width = '50%';
+                strengthBar.style.background = '#ffd166';
+            } else {
+                strengthBar.style.width = '100%';
+                strengthBar.style.background = '#4ecdc4';
             }
+        });
+
+        // إضافة تأثير التحميل عند الإرسال
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        
+        loginForm.addEventListener('submit', function() {
+            loginBtn.classList.add('btn-loading');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = 'جاري التسجيل...';
         });
     </script>
 </body>
