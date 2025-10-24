@@ -2,14 +2,23 @@
   "products": [
     
        {
-      "S_NO": 1,
+      "S_NO": 8,
       "Item_Code": "MB11",
       "Item_Name": "Spinning Mop",
       "Image": "img/2.jpg",
       "Packing": "1 X 6 PCS",
       "Item_Group": "Cleaning Bucket",
       "Brand": "Gator"
-    },
+    },{
+"S_NO": 1,
+"Item_Code": "AD04",
+"Item_Name": "Fabric not intended for wearing, fabrics for wiping and cleaningCOMPOSITION. 100% COTTON CHOP NO FLANNEL SPECIFICATION 24X13 42X44 DESIGN NO COL NO WHITE LOT NO WIDTH 36 INCHS LENCTH 22 YDS DEGREE OF COLOR CHANGE UNDER HEAT 4 GRADE 4 GRADE DEGREE OF COLOR CHANGE BY WASHING. XXX MADE IN CHINA",
+"Image": "img/1.jpeg",
+"Packing": "24 x 13 42x44 ",
+"Item_Group": "Double Class",
+"Brand": "Gator"
+},
+   
      {
       "S_NO": 2,
       "Item_Code": "MB28",
