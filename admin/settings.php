@@ -8,8 +8,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
 
 // جلب جميع الإعدادات
 try {
-    $stmt = $pdo->query("SELECT setting_key, setting_value FROM settings");
-    $settings_data = $stmt->fetchAll(PDO::FETCH_KEY_PAIR); // الآن سيعمل لأننا اخترنا عمودين فقط
+    $stmt = $pdo->query("SELECT setting_key, setting_value, setting_type FROM settings");
+    $settings_data = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $settings_data[$row['setting_key']] = $row['setting_value'];
+    }
 } catch (PDOException $e) {
     $settings_data = [];
     $error = "خطأ في جلب البيانات: " . $e->getMessage();
@@ -30,17 +33,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
     }
 }
 ?>
-
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate="site_settings">الإعدادات - الإدارة</title>
+    <title>الإعدادات - الإدارة</title>
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
+</head>
+  <style>
         :root {
             --primary: #4361ee;
             --secondary: #3f37c9;
@@ -153,6 +155,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             color: #64748b;
         }
 
+        /* تبويبات */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+            background: #f8f9fa;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: #f8f9fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         /* بطاقات */
         .card {
             background: white;
@@ -220,16 +263,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             color: white;
         }
 
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: #e1156d;
-            color: white;
-        }
-
         /* نماذج */
         .form-group {
             margin-bottom: 1.5rem;
@@ -285,6 +318,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
             padding: 0 0.75rem;
         }
 
+        .col-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            padding: 0 0.75rem;
+        }
+
         /* تنبيهات */
         .alert {
             padding: 1rem 1.5rem;
@@ -302,31 +341,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
 
         .alert i {
             margin-left: 0.5rem;
-        }
-
-        /* أدوات متقدمة */
-        .tool-card {
-            text-align: center;
-            height: 100%;
-            transition: var(--transition);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #f8f9fa;
-        }
-
-        .tool-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .tool-icon {
-            font-size: 2.5rem;
-            margin: 1.5rem 0;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         /* زر الترجمة */
@@ -422,15 +436,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 margin-bottom: 1rem;
             }
             
-            .tool-card {
-                margin-bottom: 1rem;
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                border-bottom: 1px solid #e2e8f0;
+                border-left: 3px solid transparent;
+            }
+            
+            .tab-btn.active {
+                border-left-color: var(--primary);
             }
         }
     </style>
-</head>
 <body>
-    <div class="dashboard">
-           <?php include 'sidebar.php'; ?>
+       <div class="dashboard">
+        <?php include 'sidebar.php'; ?>
         
         <!-- المحتوى الرئيسي -->
         <main class="main-content">
@@ -447,123 +469,716 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 </div>
             <?php endif; ?>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-sliders-h"></i> <span data-translate="general_settings">الإعدادات العامة</span></h3>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label for="site_title">
-                                        <i class="fas fa-heading"></i> 
-                                        <span data-translate="site_title">عنوان الموقع</span>
-                                    </label>
-                                    <input type="text" class="form-control" id="site_title" name="settings[site_title]" 
-                                           value="<?php echo htmlspecialchars($settings_data['site_title'] ?? ''); ?>" 
-                                           placeholder="أدخل عنوان الموقع" required>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label for="site_description">
-                                        <i class="fas fa-align-left"></i> 
-                                        <span data-translate="site_description">وصف الموقع</span>
-                                    </label>
-                                    <textarea class="form-control" id="site_description" name="settings[site_description]" 
-                                              rows="3" placeholder="أدخل وصف مختصر للموقع"><?php echo htmlspecialchars($settings_data['site_description'] ?? ''); ?></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr>
-                        
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label for="maintenance_mode">
-                                        <i class="fas fa-tools"></i> 
-                                        <span data-translate="maintenance_mode">وضع الصيانة</span>
-                                    </label>
-                                    <select class="form-control" id="maintenance_mode" name="settings[maintenance_mode]">
-                                        <option value="0" <?php echo ($settings_data['maintenance_mode'] ?? '0') == '0' ? 'selected' : ''; ?> data-translate="disabled">معطل</option>
-                                        <option value="1" <?php echo ($settings_data['maintenance_mode'] ?? '0') == '1' ? 'selected' : ''; ?> data-translate="enabled">مفعل</option>
-                                    </select>
-                                    <small style="color: #666;">
-                                        <span data-translate="maintenance_mode_desc">عند التفعيل، سيظهر للمستخدمين رسالة صيانة</span>
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <button type="submit" name="update_settings" class="btn btn-primary">
-                                <i class="fas fa-save"></i> 
-                                <span data-translate="save_settings">حفظ الإعدادات</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <!-- تبويبات الإعدادات -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="general">
+                    <i class="fas fa-cog"></i> البيانات العامة
+                </button>
+                     <button class="tab-btn" data-tab="hero">
+            <i class="fas fa-home"></i> الهيرو المتحرك
+        </button>
+                <button class="tab-btn" data-tab="header">
+                    <i class="fas fa-heading"></i> الهيدر والشعار
+                </button>
+                <button class="tab-btn" data-tab="about">
+                    <i class="fas fa-info-circle"></i> من نحن
+                </button>
+                <button class="tab-btn" data-tab="stats">
+                    <i class="fas fa-chart-bar"></i> الإحصائيات
+                </button>
+                <button class="tab-btn" data-tab="products">
+                    <i class="fas fa-boxes"></i> المنتجات
+                </button>
+                <button class="tab-btn" data-tab="brands">
+                    <i class="fas fa-tags"></i> العلامات التجارية
+                </button>
+                <button class="tab-btn" data-tab="contact">
+                    <i class="fas fa-phone"></i> اتصل بنا
+                </button>
+                <button class="tab-btn" data-tab="footer">
+                    <i class="fas fa-shoe-prints"></i> الفوتر
+                </button>
             </div>
 
-            <!-- إعدادات متقدمة -->
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-tools"></i> <span data-translate="advanced_tools">أدوات متقدمة</span></h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-4">
-                            <div class="tool-card">
-                                <div class="card-body">
-                                    <div class="tool-icon" style="color: var(--primary);">
-                                        <i class="fas fa-database"></i>
-                                    </div>
-                                    <h4 data-translate="backup">نسخ احتياطي</h4>
-                                    <p data-translate="backup_desc">إنشاء نسخة احتياطية من قاعدة البيانات</p>
-                                    <button class="btn btn-primary" onclick="alert(currentLang === 'ar' ? 'سيتم تطوير هذه الميزة قريباً' : 'This feature will be developed soon')">
-                                        <i class="fas fa-download"></i> 
-                                        <span data-translate="create_backup">إنشاء نسخة</span>
-                                    </button>
-                                </div>
-                            </div>
+            <form method="POST">
+                <!-- تبويب البيانات العامة -->
+                <div class="tab-content active" id="general-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-sliders-h"></i> الإعدادات العامة</h3>
                         </div>
-                        
-                        <div class="col-4">
-                            <div class="tool-card">
-                                <div class="card-body">
-                                    <div class="tool-icon" style="color: var(--success);">
-                                        <i class="fas fa-file-export"></i>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="site_title">عنوان الموقع</label>
+                                        <input type="text" class="form-control" id="site_title" name="settings[site_title]" 
+                                               value="<?php echo htmlspecialchars($settings_data['site_title'] ?? ''); ?>">
                                     </div>
-                                    <h4 data-translate="export_data">تصدير البيانات</h4>
-                                    <p data-translate="export_data_desc">تصدير المنتجات والمستخدمين</p>
-                                    <button class="btn btn-success" onclick="alert(currentLang === 'ar' ? 'سيتم تطوير هذه الميزة قريباً' : 'This feature will be developed soon')">
-                                        <i class="fas fa-file-export"></i> 
-                                        <span data-translate="export">تصدير</span>
-                                    </button>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-4">
-                            <div class="tool-card">
-                                <div class="card-body">
-                                    <div class="tool-icon" style="color: var(--warning);">
-                                        <i class="fas fa-broom"></i>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="maintenance_mode">وضع الصيانة</label>
+                                        <select class="form-control" id="maintenance_mode" name="settings[maintenance_mode]">
+                                            <option value="0" <?php echo ($settings_data['maintenance_mode'] ?? '0') == '0' ? 'selected' : ''; ?>>معطل</option>
+                                            <option value="1" <?php echo ($settings_data['maintenance_mode'] ?? '0') == '1' ? 'selected' : ''; ?>>مفعل</option>
+                                        </select>
                                     </div>
-                                    <h4 data-translate="system_cleanup">تنظيف النظام</h4>
-                                    <p data-translate="system_cleanup_desc">حذف الملفات والبيانات المؤقتة</p>
-                                    <button class="btn btn-warning" onclick="alert(currentLang === 'ar' ? 'سيتم تطوير هذه الميزة قريباً' : 'This feature will be developed soon')">
-                                        <i class="fas fa-broom"></i> 
-                                        <span data-translate="cleanup">تنظيف</span>
-                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+        <!-- تبويب الهيرو المتحرك -->
+        <div class="tab-content" id="hero-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-home"></i> إعدادات قسم الهيرو المتحرك</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="hero_title_main_ar">العنوان الرئيسي (عربي)</label>
+                                <input type="text" class="form-control" id="hero_title_main_ar" name="settings[hero_title_main_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_title_main_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="hero_title_main_en">العنوان الرئيسي (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_title_main_en" name="settings[hero_title_main_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_title_main_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="hero_title_sub_ar">العنوان الفرعي (عربي)</label>
+                                <input type="text" class="form-control" id="hero_title_sub_ar" name="settings[hero_title_sub_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_title_sub_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="hero_title_sub_en">العنوان الفرعي (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_title_sub_en" name="settings[hero_title_sub_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_title_sub_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="hero_subtitle_ar">الشعار (عربي)</label>
+                                <input type="text" class="form-control" id="hero_subtitle_ar" name="settings[hero_subtitle_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_subtitle_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label for="hero_subtitle_en">الشعار (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_subtitle_en" name="settings[hero_subtitle_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_subtitle_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="hero_description_ar">الوصف (عربي)</label>
+                        <textarea class="form-control" id="hero_description_ar" name="settings[hero_description_ar]" rows="3"><?php echo htmlspecialchars($settings_data['hero_description_ar'] ?? ''); ?></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="hero_description_en">الوصف (إنجليزي)</label>
+                        <textarea class="form-control" id="hero_description_en" name="settings[hero_description_en]" rows="3"><?php echo htmlspecialchars($settings_data['hero_description_en'] ?? ''); ?></textarea>
+                    </div>
+                    
+                    <h4 class="section-subtitle">أزرار القسم</h4>
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="hero_button_products_ar">زر المنتجات (عربي)</label>
+                                <input type="text" class="form-control" id="hero_button_products_ar" name="settings[hero_button_products_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_button_products_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="hero_button_about_ar">زر من نحن (عربي)</label>
+                                <input type="text" class="form-control" id="hero_button_about_ar" name="settings[hero_button_about_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_button_about_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="hero_button_contact_ar">زر اتصل بنا (عربي)</label>
+                                <input type="text" class="form-control" id="hero_button_contact_ar" name="settings[hero_button_contact_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_button_contact_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="hero_button_products_en">زر المنتجات (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_button_products_en" name="settings[hero_button_products_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_button_products_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="hero_button_about_en">زر من نحن (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_button_about_en" name="settings[hero_button_about_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_button_about_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="form-group">
+                                <label for="hero_button_contact_en">زر اتصل بنا (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_button_contact_en" name="settings[hero_button_contact_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_button_contact_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h4 class="section-subtitle">فئات المنتجات</h4>
+                    <div class="row">
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_energy_ar">فئة الطاقة (عربي)</label>
+                                <input type="text" class="form-control" id="hero_category_energy_ar" name="settings[hero_category_energy_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_energy_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_purification_ar">فئة التنقية (عربي)</label>
+                                <input type="text" class="form-control" id="hero_category_purification_ar" name="settings[hero_category_purification_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_purification_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_cleaning_ar">فئة التنظيف (عربي)</label>
+                                <input type="text" class="form-control" id="hero_category_cleaning_ar" name="settings[hero_category_cleaning_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_cleaning_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_supplies_ar">فئة المستلزمات (عربي)</label>
+                                <input type="text" class="form-control" id="hero_category_supplies_ar" name="settings[hero_category_supplies_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_supplies_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_energy_en">فئة الطاقة (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_category_energy_en" name="settings[hero_category_energy_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_energy_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_purification_en">فئة التنقية (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_category_purification_en" name="settings[hero_category_purification_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_purification_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_cleaning_en">فئة التنظيف (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_category_cleaning_en" name="settings[hero_category_cleaning_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_cleaning_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="form-group">
+                                <label for="hero_category_supplies_en">فئة المستلزمات (إنجليزي)</label>
+                                <input type="text" class="form-control" id="hero_category_supplies_en" name="settings[hero_category_supplies_en]" 
+                                       value="<?php echo htmlspecialchars($settings_data['hero_category_supplies_en'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
+                <!-- تبويب الهيدر والشعار -->
+                <div class="tab-content" id="header-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-heading"></i> إعدادات الهيدر والشعار</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="company_name_ar">اسم الشركة (عربي)</label>
+                                        <input type="text" class="form-control" id="company_name_ar" name="settings[company_name_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['company_name_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="company_name_en">اسم الشركة (إنجليزي)</label>
+                                        <input type="text" class="form-control" id="company_name_en" name="settings[company_name_en]" 
+                                               value="<?php echo htmlspecialchars($settings_data['company_name_en'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="tagline_ar">الشعار (عربي)</label>
+                                        <input type="text" class="form-control" id="tagline_ar" name="settings[tagline_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['tagline_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="tagline_en">الشعار (إنجليزي)</label>
+                                        <input type="text" class="form-control" id="tagline_en" name="settings[tagline_en]" 
+                                               value="<?php echo htmlspecialchars($settings_data['tagline_en'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="header_logo_text_ar">نص الشعار (عربي)</label>
+                                        <input type="text" class="form-control" id="header_logo_text_ar" name="settings[header_logo_text_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['header_logo_text_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="header_logo_subtext">نص الشعار الفرعي</label>
+                                        <input type="text" class="form-control" id="header_logo_subtext" name="settings[header_logo_subtext]" 
+                                               value="<?php echo htmlspecialchars($settings_data['header_logo_subtext'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="welcome_text_ar">نص الترحيب (عربي)</label>
+                                        <input type="text" class="form-control" id="welcome_text_ar" name="settings[welcome_text_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['welcome_text_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="header_phone_display">رقم الهاتف (عرض)</label>
+                                        <input type="text" class="form-control" id="header_phone_display" name="settings[header_phone_display]" 
+                                               value="<?php echo htmlspecialchars($settings_data['header_phone_display'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب من نحن -->
+                <div class="tab-content" id="about-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-info-circle"></i> إعدادات قسم من نحن</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="about_title_ar">عنوان القسم (عربي)</label>
+                                        <input type="text" class="form-control" id="about_title_ar" name="settings[about_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['about_title_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="about_title_en">عنوان القسم (إنجليزي)</label>
+                                        <input type="text" class="form-control" id="about_title_en" name="settings[about_title_en]" 
+                                               value="<?php echo htmlspecialchars($settings_data['about_title_en'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="about_description_ar">وصف الشركة (عربي)</label>
+                                <textarea class="form-control" id="about_description_ar" name="settings[about_description_ar]" rows="4"><?php echo htmlspecialchars($settings_data['about_description_ar'] ?? ''); ?></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="about_description_en">وصف الشركة (إنجليزي)</label>
+                                <textarea class="form-control" id="about_description_en" name="settings[about_description_en]" rows="4"><?php echo htmlspecialchars($settings_data['about_description_en'] ?? ''); ?></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="mission_title_ar">عنوان الرسالة (عربي)</label>
+                                        <input type="text" class="form-control" id="mission_title_ar" name="settings[mission_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['mission_title_ar'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="mission_description_ar">نص الرسالة (عربي)</label>
+                                        <textarea class="form-control" id="mission_description_ar" name="settings[mission_description_ar]" rows="3"><?php echo htmlspecialchars($settings_data['mission_description_ar'] ?? ''); ?></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="vision_title_ar">عنوان الرؤية (عربي)</label>
+                                        <input type="text" class="form-control" id="vision_title_ar" name="settings[vision_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['vision_title_ar'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="vision_description_ar">نص الرؤية (عربي)</label>
+                                        <textarea class="form-control" id="vision_description_ar" name="settings[vision_description_ar]" rows="3"><?php echo htmlspecialchars($settings_data['vision_description_ar'] ?? ''); ?></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="values_title_ar">عنوان القيم (عربي)</label>
+                                        <input type="text" class="form-control" id="values_title_ar" name="settings[values_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['values_title_ar'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="values_description_ar">نص القيم (عربي)</label>
+                                        <textarea class="form-control" id="values_description_ar" name="settings[values_description_ar]" rows="3"><?php echo htmlspecialchars($settings_data['values_description_ar'] ?? ''); ?></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب الإحصائيات -->
+                <div class="tab-content" id="stats-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar"></i> إعدادات الإحصائيات</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="stats_title_ar">عنوان القسم (عربي)</label>
+                                        <input type="text" class="form-control" id="stats_title_ar" name="settings[stats_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['stats_title_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="stats_title_en">عنوان القسم (إنجليزي)</label>
+                                        <input type="text" class="form-control" id="stats_title_en" name="settings[stats_title_en]" 
+                                               value="<?php echo htmlspecialchars($settings_data['stats_title_en'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="products_count">عدد المنتجات</label>
+                                        <input type="number" class="form-control" id="products_count" name="settings[products_count]" 
+                                               value="<?php echo htmlspecialchars($settings_data['products_count'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="products_label_ar">تسمية المنتجات (عربي)</label>
+                                        <input type="text" class="form-control" id="products_label_ar" name="settings[products_label_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['products_label_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="customers_count">عدد العملاء</label>
+                                        <input type="number" class="form-control" id="customers_count" name="settings[customers_count]" 
+                                               value="<?php echo htmlspecialchars($settings_data['customers_count'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="customers_label_ar">تسمية العملاء (عربي)</label>
+                                        <input type="text" class="form-control" id="customers_label_ar" name="settings[customers_label_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['customers_label_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="experience_count">سنوات الخبرة</label>
+                                        <input type="number" class="form-control" id="experience_count" name="settings[experience_count]" 
+                                               value="<?php echo htmlspecialchars($settings_data['experience_count'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="experience_label_ar">تسمية الخبرة (عربي)</label>
+                                        <input type="text" class="form-control" id="experience_label_ar" name="settings[experience_label_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['experience_label_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="deliveries_count">عدد التوصيلات</label>
+                                        <input type="number" class="form-control" id="deliveries_count" name="settings[deliveries_count]" 
+                                               value="<?php echo htmlspecialchars($settings_data['deliveries_count'] ?? ''); ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="deliveries_label_ar">تسمية التوصيل (عربي)</label>
+                                        <input type="text" class="form-control" id="deliveries_label_ar" name="settings[deliveries_label_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['deliveries_label_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب المنتجات -->
+                <div class="tab-content" id="products-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-boxes"></i> إعدادات المنتجات</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="products_title_ar">عنوان القسم (عربي)</label>
+                                        <input type="text" class="form-control" id="products_title_ar" name="settings[products_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['products_title_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="products_title_en">عنوان القسم (إنجليزي)</label>
+                                        <input type="text" class="form-control" id="products_title_en" name="settings[products_title_en]" 
+                                               value="<?php echo htmlspecialchars($settings_data['products_title_en'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="filter_all_ar">زر الكل (عربي)</label>
+                                        <input type="text" class="form-control" id="filter_all_ar" name="settings[filter_all_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['filter_all_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="filter_cleaning_ar">زر التنظيف (عربي)</label>
+                                        <input type="text" class="form-control" id="filter_cleaning_ar" name="settings[filter_cleaning_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['filter_cleaning_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-group">
+                                        <label for="filter_energy_ar">زر الطاقة (عربي)</label>
+                                        <input type="text" class="form-control" id="filter_energy_ar" name="settings[filter_energy_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['filter_energy_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب العلامات التجارية -->
+                <div class="tab-content" id="brands-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-tags"></i> إعدادات العلامات التجارية</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="brands_title_ar">عنوان القسم (عربي)</label>
+                                        <input type="text" class="form-control" id="brands_title_ar" name="settings[brands_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['brands_title_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="brands_title_en">عنوان القسم (إنجليزي)</label>
+                                        <input type="text" class="form-control" id="brands_title_en" name="settings[brands_title_en]" 
+                                               value="<?php echo htmlspecialchars($settings_data['brands_title_en'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="brand_double_class">Double Class</label>
+                                        <input type="text" class="form-control" id="brand_double_class" name="settings[brand_double_class]" 
+                                               value="<?php echo htmlspecialchars($settings_data['brand_double_class'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="brand_gator">Gator</label>
+                                        <input type="text" class="form-control" id="brand_gator" name="settings[brand_gator]" 
+                                               value="<?php echo htmlspecialchars($settings_data['brand_gator'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="brand_premium">Premium</label>
+                                        <input type="text" class="form-control" id="brand_premium" name="settings[brand_premium]" 
+                                               value="<?php echo htmlspecialchars($settings_data['brand_premium'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="brand_shield">Shield</label>
+                                        <input type="text" class="form-control" id="brand_shield" name="settings[brand_shield]" 
+                                               value="<?php echo htmlspecialchars($settings_data['brand_shield'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب اتصل بنا -->
+                <div class="tab-content" id="contact-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-phone"></i> إعدادات اتصل بنا</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="contact_title_ar">عنوان القسم (عربي)</label>
+                                        <input type="text" class="form-control" id="contact_title_ar" name="settings[contact_title_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['contact_title_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="contact_title_en">عنوان القسم (إنجليزي)</label>
+                                        <input type="text" class="form-control" id="contact_title_en" name="settings[contact_title_en]" 
+                                               value="<?php echo htmlspecialchars($settings_data['contact_title_en'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="address_ar">العنوان (عربي)</label>
+                                        <input type="text" class="form-control" id="address_ar" name="settings[address_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['address_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="phone">رقم الهاتف</label>
+                                        <input type="text" class="form-control" id="phone" name="settings[phone]" 
+                                               value="<?php echo htmlspecialchars($settings_data['phone'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="email">البريد الإلكتروني</label>
+                                        <input type="email" class="form-control" id="email" name="settings[email]" 
+                                               value="<?php echo htmlspecialchars($settings_data['email'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="contact_top_phone_display">رقم الهاتف العلوي</label>
+                                        <input type="text" class="form-control" id="contact_top_phone_display" name="settings[contact_top_phone_display]" 
+                                               value="<?php echo htmlspecialchars($settings_data['contact_top_phone_display'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="working_hours_ar">أوقات العمل (عربي)</label>
+                                <input type="text" class="form-control" id="working_hours_ar" name="settings[working_hours_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['working_hours_ar'] ?? ''); ?>">
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="form_name_ar">حقل الاسم (عربي)</label>
+                                        <input type="text" class="form-control" id="form_name_ar" name="settings[form_name_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['form_name_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="form_email_ar">حقل البريد (عربي)</label>
+                                        <input type="text" class="form-control" id="form_email_ar" name="settings[form_email_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['form_email_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="form_phone_ar">حقل الهاتف (عربي)</label>
+                                        <input type="text" class="form-control" id="form_phone_ar" name="settings[form_phone_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['form_phone_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-group">
+                                        <label for="form_message_ar">حقل الرسالة (عربي)</label>
+                                        <input type="text" class="form-control" id="form_message_ar" name="settings[form_message_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['form_message_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="submit_btn_ar">زر الإرسال (عربي)</label>
+                                <input type="text" class="form-control" id="submit_btn_ar" name="settings[submit_btn_ar]" 
+                                       value="<?php echo htmlspecialchars($settings_data['submit_btn_ar'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تبويب الفوتر -->
+                <div class="tab-content" id="footer-tab">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-shoe-prints"></i> إعدادات الفوتر</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="footer_logo_text_ar">نص الشعار (عربي)</label>
+                                        <input type="text" class="form-control" id="footer_logo_text_ar" name="settings[footer_logo_text_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['footer_logo_text_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="footer_description_ar">وصف الفوتر (عربي)</label>
+                                        <input type="text" class="form-control" id="footer_description_ar" name="settings[footer_description_ar]" 
+                                               value="<?php echo htmlspecialchars($settings_data['footer_description_ar'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="copyright_ar">حقوق النشر (عربي)</label>
+                                <textarea class="form-control" id="copyright_ar" name="settings[copyright_ar]" rows="2"><?php echo htmlspecialchars($settings_data['copyright_ar'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- زر الحفظ -->
+                <div class="card">
+                    <div class="card-body">
+                        <button type="submit" name="update_settings" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> حفظ جميع الإعدادات
+                        </button>
+                    </div>
+                </div>
+            </form>
         </main>
     </div>
 
@@ -573,106 +1188,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
     </button>
 
     <script>
+        // إدارة التبويبات
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // إزالة النشاط من جميع الأزرار والمحتويات
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // إضافة النشاط للزر والمحتوى المحدد
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
+
         // نصوص الترجمة
         const translations = {
             ar: {
-                   "dashboard": "لوحة التحكم الرئيسية",
-                                "welcome": "مرحباً،",
-                "home": "الرئيسية",
-                "user_management": "إدارة المستخدمين",
-                "product_management": "إدارة المنتجات",
-                "service_management": "إدارة الخدمات",
-                "order_management": "إدارة الطلبات",
-                "about_us": "من نحن",
-                "contact_info": "بيانات التواصل",
-                "settings": "الإعدادات",
-                "logout": "تسجيل الخروج",
-                "profile": "الملف الشخصي",
-
-
-                // العناوين الرئيسية
                 "site_settings": "الإعدادات - الإدارة",
                 "site_settings_desc": "تعديل الإعدادات العامة للموقع",
-                "general_settings": "الإعدادات العامة",
-                "advanced_tools": "أدوات متقدمة",
-                
-                // نماذج الإعدادات
-                "site_title": "عنوان الموقع",
-                "site_description": "وصف الموقع",
-                "maintenance_mode": "وضع الصيانة",
-                "maintenance_mode_desc": "عند التفعيل، سيظهر للمستخدمين رسالة صيانة",
-                "disabled": "معطل",
-                "enabled": "مفعل",
-                
-                // أزرار
-                "save_settings": "حفظ الإعدادات",
-                
-                // أدوات متقدمة
-                "backup": "نسخ احتياطي",
-                "backup_desc": "إنشاء نسخة احتياطية من قاعدة البيانات",
-                "create_backup": "إنشاء نسخة",
-                "export_data": "تصدير البيانات",
-                "export_data_desc": "تصدير المنتجات والمستخدمين",
-                "export": "تصدير",
-                "system_cleanup": "تنظيف النظام",
-                "system_cleanup_desc": "حذف الملفات والبيانات المؤقتة",
-                "cleanup": "تنظيف",
-                
-                // رسائل النجاح
                 "settings_updated": "تم تحديث الإعدادات بنجاح"
             },
             en: {
-                  "dashboard": "Main Dashboard",
-                     "welcome": "Welcome,",
-                    "home": "Home",
-                    "user_management": "User Management",
-                    "product_management": "Product Management",
-                    "service_management": "Service Management",
-                    "order_management": "Order Management",
-                    "about_us": "About Us",
-                    "contact_info": "Contact Info",
-                    "settings": "Settings",
-                    "logout": "Logout",
-                    "profile": "Profile",
-                // العناوين الرئيسية
                 "site_settings": "Site Settings - Admin",
                 "site_settings_desc": "Modify general site settings",
-                "general_settings": "General Settings",
-                "advanced_tools": "Advanced Tools",
-                
-                // نماذج الإعدادات
-                "site_title": "Site Title",
-                "site_description": "Site Description",
-                "maintenance_mode": "Maintenance Mode",
-                "maintenance_mode_desc": "When enabled, users will see a maintenance message",
-                "disabled": "Disabled",
-                "enabled": "Enabled",
-                
-                // أزرار
-                "save_settings": "Save Settings",
-                
-                // أدوات متقدمة
-                "backup": "Backup",
-                "backup_desc": "Create a database backup",
-                "create_backup": "Create Backup",
-                "export_data": "Export Data",
-                "export_data_desc": "Export products and users",
-                "export": "Export",
-                "system_cleanup": "System Cleanup",
-                "system_cleanup_desc": "Delete temporary files and data",
-                "cleanup": "Cleanup",
-                
-                // رسائل النجاح
                 "settings_updated": "Settings updated successfully"
             }
         };
 
-        // حالة اللغة الحالية
         let currentLang = localStorage.getItem('language') || 'ar';
 
-        // دالة لتطبيق الترجمة
         function applyLanguage(lang) {
-            // تحديث النصوص في الصفحة
             document.querySelectorAll('[data-translate]').forEach(element => {
                 const key = element.getAttribute('data-translate');
                 if (translations[lang][key]) {
@@ -680,23 +1226,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 }
             });
 
-            // تحديث خيارات التحديد
-            document.querySelectorAll('select option').forEach(option => {
-                const key = option.getAttribute('data-translate');
-                if (key && translations[lang][key]) {
-                    option.textContent = translations[lang][key];
-                }
-            });
-
-            // تحديث النصوص في العناصر الأخرى
-            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
-                const placeholder = element.getAttribute('placeholder');
-                if (placeholder && translations[lang][placeholder]) {
-                    element.setAttribute('placeholder', translations[lang][placeholder]);
-                }
-            });
-
-            // تحديث اتجاه الصفحة
             if (lang === 'ar') {
                 document.documentElement.dir = 'rtl';
                 document.documentElement.lang = 'ar';
@@ -707,18 +1236,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_settings'])) {
                 document.title = 'Site Settings - Admin';
             }
 
-            // حفظ اللغة في localStorage
             localStorage.setItem('language', lang);
             currentLang = lang;
         }
 
-        // حدث النقر على زر الترجمة
         document.getElementById('translateBtn').addEventListener('click', function() {
             const newLang = currentLang === 'ar' ? 'en' : 'ar';
             applyLanguage(newLang);
         });
 
-        // تطبيق اللغة عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', function() {
             applyLanguage(currentLang);
         });

@@ -1,72 +1,353 @@
 <?php
 require_once 'config.php';
 
-// جلب جميع المنتجات النشطة
-$search = $_GET['search'] ?? '';
-$category = $_GET['category'] ?? '';
 
-$query = "SELECT * FROM products WHERE is_active = 1";
+// معالجة البحث والترقيم
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$limit = 10;
+$offset = ($page - 1) * $limit;
+
+// بناء استعلام البحث
+$where_conditions = [];
 $params = [];
 
 if (!empty($search)) {
-    $query .= " AND (name LIKE ? OR description LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $where_conditions[] = "(Item_Name LIKE ? OR Item_Code LIKE ? OR Brand LIKE ?)";
+    $search_term = "%$search%";
+    $params[] = $search_term;
+    $params[] = $search_term;
+    $params[] = $search_term;
 }
 
-if (!empty($category)) {
-    $query .= " AND category = ?";
-    $params[] = $category;
+$where_sql = '';
+if (!empty($where_conditions)) {
+    $where_sql = 'WHERE ' . implode(' AND ', $where_conditions);
 }
 
-$query .= " ORDER BY created_at DESC";
-
-$stmt = $pdo->prepare($query);
+// جلب إجمالي عدد المنتجات
+$count_sql = "SELECT COUNT(*) as total FROM products $where_sql";
+$stmt = $pdo->prepare($count_sql);
 $stmt->execute($params);
-$products = $stmt->fetchAll();
+$total_products = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+$total_pages = ceil($total_products / $limit);
 
-// جلب الفئات المختلفة
-$stmt = $pdo->query("SELECT DISTINCT category FROM products WHERE is_active = 1 AND category IS NOT NULL");
-$categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
+// جلب المنتجات للصفحة الحالية
+$products_sql = "
+    SELECT p.*, 
+           (SELECT image_name FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as primary_image
+    FROM products p 
+    $where_sql 
+    ORDER BY p.featured DESC, p.id DESC 
+    LIMIT $limit OFFSET $offset
+";
+
+$stmt = $pdo->prepare($products_sql);
+$stmt->execute($params);
+$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جميع المنتجات - متجرنا</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <!-- شريط التنقل -->
-    <header class="header">
-        <div class="container">
-            <nav class="navbar">
-                <div class="logo">
-                    <i class="fas fa-store"></i>
-                    متجرنا
-                </div>
-                <ul class="nav-links">
-                    <li><a href="index.php"><i class="fas fa-home"></i> الرئيسية</a></li>
-                    <li><a href="products.php" class="active"><i class="fas fa-box"></i> المنتجات</a></li>
-                    <li><a href="index.php#services"><i class="fas fa-concierge-bell"></i> الخدمات</a></li>
-                    <li><a href="index.php#about"><i class="fas fa-info-circle"></i> من نحن</a></li>
-                    <li><a href="index.php#contact"><i class="fas fa-phone"></i> اتصل بنا</a></li>
-                    <?php if (isLoggedIn()): ?>
-                        <?php if (isAdmin()): ?>
-                            <li><a href="admin/dashboard.php"><i class="fas fa-tachometer-alt"></i> لوحة التحكم</a></li>
-                        <?php else: ?>
-                            <li><a href="client/dashboard.php"><i class="fas fa-user"></i> حسابي</a></li>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <li><a href="login.php"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a></li>
-                    <?php endif; ?>
-                </ul>
-            </nav>
-        </div>
-    </header>
+
+
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #17a2b8;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            padding: 25px 0;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+        }
+        
+        .btn-warning:hover {
+            background-color: #d35400;
+        }
+        
+        .btn-info {
+            background-color: var(--info);
+        }
+        
+        .search-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .product-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: var(--warning);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .product-content {
+            padding: 20px;
+        }
+        
+        .product-code {
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .product-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--dark);
+            height: 60px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .product-brand {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .product-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-details {
+            flex: 1;
+            background: var(--info);
+        }
+        
+        .btn-order {
+            flex: 1;
+            background: var(--success);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 40px;
+        }
+        
+        .page-item {
+            display: inline-block;
+        }
+        
+        .page-link {
+            padding: 10px 18px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            color: var(--dark);
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .page-link:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .page-item.active .page-link {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .page-item.disabled .page-link {
+            color: #ccc;
+            pointer-events: none;
+        }
+        
+        .results-info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .no-products {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .no-products i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .pagination {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+
+<?php include 'header.php'; ?>
+
 
     <!-- قسم الهيرو -->
     <section style="
@@ -80,9 +361,10 @@ $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
             <p style="font-size: 1.2rem; opacity: 0.9;">اكتشف تشكيلتنا الكاملة من المنتجات المميزة</p>
         </div>
     </section>
+    <br><br>
 
     <!-- قسم البحث والتصفية -->
-    <section style="padding: 2rem 0; background: var(--light-color);">
+    <!-- <section style="padding: 2rem 0; background: var(--light-color);">
         <div class="container">
             <div class="filters" style="
                 background: white;
@@ -135,256 +417,155 @@ $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
                 </form>
             </div>
         </div>
-    </section>
+    </section> -->
 
-    <!-- قسم المنتجات -->
-    <section style="padding: 3rem 0;">
-        <div class="container">
-            <!-- نتائج البحث -->
-            <?php if (!empty($search) || !empty($category)): ?>
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: var(--gray-700);">
-                    <?php
-                    $results_text = "عرض " . count($products) . " منتج";
-                    if (!empty($search)) {
-                        $results_text .= " للبحث: \"$search\"";
-                    }
-                    if (!empty($category)) {
-                        $results_text .= " في فئة: \"$category\"";
-                    }
-                    echo $results_text;
-                    ?>
-                </h3>
+     <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1><i class="fas fa-boxes"></i> معرض المنتجات</h1>
+                    <p>اكتشف مجموعتنا المميزة من المنتجات عالية الجودة</p>
+                </div>
+              
             </div>
-            <?php endif; ?>
-
-            <!-- شبكة المنتجات -->
-            <?php if (empty($products)): ?>
-                <div style="text-align: center; padding: 4rem;">
-                    <i class="fas fa-search" style="font-size: 4rem; color: var(--gray-400); margin-bottom: 1rem;"></i>
-                    <h3 style="color: var(--gray-600); margin-bottom: 1rem;">لم نعثر على منتجات</h3>
-                    <p style="color: var(--gray-500); margin-bottom: 2rem;">جرب تعديل كلمات البحث أو الفلاتر</p>
-                    <a href="products.php" class="btn btn-primary">
+        </header>
+        
+        <div class="search-container">
+            <form method="GET" class="search-form">
+                <input type="text" name="search" class="search-input" placeholder="ابحث عن منتج بالاسم، الكود أو العلامة التجارية..." value="<?php echo htmlspecialchars($search); ?>">
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-search"></i> بحث
+                </button>
+                <?php if(!empty($search)): ?>
+                    <a href="products.php" class="btn btn-danger">
+                        <i class="fas fa-times"></i> إلغاء البحث
+                    </a>
+                <?php endif; ?>
+            </form>
+        </div>
+        
+        <div class="results-info">
+            <p>
+                <?php if(!empty($search)): ?>
+                    عرض <?php echo count($products); ?> من أصل <?php echo $total_products; ?> منتج للبحث "<?php echo htmlspecialchars($search); ?>"
+                <?php else: ?>
+                    عرض <?php echo count($products); ?> من أصل <?php echo $total_products; ?> منتج
+                <?php endif; ?>
+            </p>
+        </div>
+        
+        <?php if(empty($products)): ?>
+            <div class="no-products">
+                <i class="fas fa-box-open"></i>
+                <h3>لا توجد منتجات</h3>
+                <p>لم نعثر على أي منتج يطابق معايير البحث</p>
+                <?php if(!empty($search)): ?>
+                    <a href="products.php" class="btn btn-primary" style="margin-top: 15px;">
                         <i class="fas fa-undo"></i> عرض جميع المنتجات
                     </a>
-                </div>
-            <?php else: ?>
-                <div class="row">
-                    <?php foreach ($products as $product): ?>
-                    <div class="col-4" style="margin-bottom: 2rem;">
-                        <div class="product-card" style="
-                            background: white;
-                            border-radius: var(--border-radius-lg);
-                            box-shadow: var(--shadow-md);
-                            overflow: hidden;
-                            transition: all 0.3s ease;
-                            height: 100%;
-                            position: relative;
-                        ">
-                            <!-- شارة جديدة -->
-                            <?php 
-                            $is_new = (time() - strtotime($product['created_at'])) < (7 * 24 * 60 * 60); // منتج جديد إذا أقل من أسبوع
-                            ?>
-                            <?php if ($is_new): ?>
-                            <div style="
-                                position: absolute;
-                                top: 1rem;
-                                left: 1rem;
-                                background: var(--gradient-danger);
-                                color: white;
-                                padding: 0.25rem 0.75rem;
-                                border-radius: 20px;
-                                font-size: 0.8rem;
-                                font-weight: 600;
-                                z-index: 2;
-                            ">
-                                <i class="fas fa-star"></i> جديد
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="products-grid">
+                <?php foreach($products as $product): ?>
+                <div class="product-card">
+                    <?php if($product['featured']): ?>
+                        <div class="product-badge">منتج مميز</div>
+                    <?php endif; ?>
+                    
+                    <?php if($product['primary_image']): ?>
+                        <img src="uploads/products<?php echo $product['primary_image']; ?>" alt="<?php echo htmlspecialchars($product['Item_Name']); ?>" class="product-image">
+                    <?php else: ?>
+                        <img src="https://via.placeholder.com/300x220/e0e0e0/666666?text=لا+توجد+صورة" alt="لا توجد صورة" class="product-image">
+                    <?php endif; ?>
+                    
+                    <div class="product-content">
+                        <div class="product-code"><?php echo $product['Item_Code']; ?></div>
+                        <h3 class="product-name"><?php echo $product['Item_Name']; ?></h3>
+                        
+                        <div class="product-meta">
+                            <div class="product-brand">
+                                <i class="fas fa-tag"></i> <?php echo $product['Brand']; ?>
                             </div>
-                            <?php endif; ?>
-
-                            <!-- صورة المنتج -->
-                            <div class="product-image" style="
-                                height: 220px;
-                                background: linear-gradient(135deg, var(--gray-100), var(--gray-200));
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                position: relative;
-                                overflow: hidden;
-                            ">
-                                <?php if ($product['image_path']): ?>
-                                    <img src="<?php echo $product['image_path']; ?>" 
-                                         alt="<?php echo $product['name']; ?>" 
-                                         style="width: 100%; height: 100%; object-fit: cover;">
-                                <?php else: ?>
-                                    <i class="fas fa-box" style="font-size: 3rem; color: var(--gray-400);"></i>
-                                <?php endif; ?>
-                                
-                                <!-- طبقة التفاعل -->
-                                <div class="product-actions" style="
-                                    position: absolute;
-                                    top: 0;
-                                    right: 0;
-                                    width: 100%;
-                                    height: 100%;
-                                    background: rgba(0,0,0,0.7);
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    opacity: 0;
-                                    transition: all 0.3s ease;
-                                ">
-                                    <div style="text-align: center;">
-                                        <button class="btn btn-primary view-details" 
-                                                data-product='<?php echo json_encode($product); ?>'
-                                                style="margin: 0.25rem;">
-                                            <i class="fas fa-eye"></i> عرض التفاصيل
-                                        </button>
-                                        <button class="btn btn-success add-to-cart" 
-                                                data-product-id="<?php echo $product['id']; ?>"
-                                                style="margin: 0.25rem;">
-                                            <i class="fas fa-cart-plus"></i> أضف للسلة
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- محتوى المنتج -->
-                            <div class="product-content" style="padding: 1.5rem;">
-                                <!-- الفئة -->
-                                <div style="margin-bottom: 0.75rem;">
-                                    <span style="
-                                        background: var(--gradient-primary);
-                                        color: white;
-                                        padding: 0.25rem 0.75rem;
-                                        border-radius: 20px;
-                                        font-size: 0.8rem;
-                                        font-weight: 600;
-                                    ">
-                                        <?php echo htmlspecialchars($product['category']); ?>
-                                    </span>
-                                </div>
-                                
-                                <!-- الاسم -->
-                                <h3 style="
-                                    margin: 0 0 1rem 0; 
-                                    color: var(--dark-color); 
-                                    font-size: 1.2rem;
-                                    line-height: 1.4;
-                                    height: 2.8rem;
-                                    overflow: hidden;
-                                ">
-                                    <?php echo htmlspecialchars($product['name']); ?>
-                                </h3>
-                                
-                                <!-- الوصف -->
-                                <p style="
-                                    color: var(--gray-600); 
-                                    margin-bottom: 1rem; 
-                                    line-height: 1.5; 
-                                    font-size: 0.9rem;
-                                    height: 4.5rem;
-                                    overflow: hidden;
-                                ">
-                                    <?php echo htmlspecialchars($product['description']); ?>
-                                </p>
-                                
-                                <!-- السعر والمخزون -->
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <span style="font-size: 1.5rem; font-weight: 700; color: var(--success-color);">
-                                            <?php echo number_format($product['price'], 2); ?> ر.س
-                                        </span>
-                                    </div>
-                                    <div style="text-align: left;">
-                                        <span style="color: <?php echo $product['stock_quantity'] > 0 ? 'var(--success-color)' : 'var(--danger-color)'; ?>; font-size: 0.9rem;">
-                                            <i class="fas fa-box"></i> 
-                                            <?php echo $product['stock_quantity'] > 0 ? $product['stock_quantity'] . ' متوفر' : 'غير متوفر'; ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <!-- تقييم النجوم -->
-                                <div style="margin-top: 1rem; text-align: center;">
-                                    <div class="product-rating" style="color: #ffc107;">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star-half-alt"></i>
-                                        <span style="color: var(--gray-500); font-size: 0.8rem; margin-right: 0.5rem;">(4.5)</span>
-                                    </div>
-                                </div>
+                            <div class="product-group">
+                                <i class="fas fa-layer-group"></i> <?php echo $product['Item_Group']; ?>
                             </div>
                         </div>
+                        
+                        <div class="product-meta">
+                            <div class="product-packing">
+                                <i class="fas fa-box"></i> <?php echo $product['Packing']; ?>
+                            </div>
+                            <div class="product-sno">
+                                #<?php echo $product['S_NO']; ?>
+                            </div>
+                        </div>
+                        
+                        <div class="product-actions">
+                            <a href="product_details.php?id=<?php echo $product['id']; ?>" class="btn btn-details">
+                                <i class="fas fa-eye"></i> التفاصيل
+                            </a>
+                            <a href="order.php?product_id=<?php echo $product['id']; ?>" class="btn btn-order">
+                                <i class="fas fa-shopping-cart"></i> طلب
+                            </a>
+                        </div>
                     </div>
-                    <?php endforeach; ?>
                 </div>
-
-                <!-- ترقيم الصفحات -->
-                <div style="text-align: center; margin-top: 3rem;">
-                    <div class="pagination" style="display: inline-flex; gap: 0.5rem;">
-                        <a href="#" class="btn btn-outline" style="padding: 0.5rem 1rem;"><i class="fas fa-chevron-right"></i></a>
-                        <a href="#" class="btn btn-primary" style="padding: 0.5rem 1rem;">1</a>
-                        <a href="#" class="btn btn-outline" style="padding: 0.5rem 1rem;">2</a>
-                        <a href="#" class="btn btn-outline" style="padding: 0.5rem 1rem;">3</a>
-                        <a href="#" class="btn btn-outline" style="padding: 0.5rem 1rem;"><i class="fas fa-chevron-left"></i></a>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-    </section>
-
-    <!-- نافذة عرض التفاصيل -->
-    <div id="productModal" style="
-        display: none;
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-    ">
-        <div class="modal-content" style="
-            background: white;
-            border-radius: var(--border-radius-lg);
-            max-width: 800px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        ">
-            <button id="closeModal" style="
-                position: absolute;
-                top: 1rem;
-                left: 1rem;
-                background: var(--danger-color);
-                color: white;
-                border: none;
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                cursor: pointer;
-                z-index: 2;
-            ">
-                <i class="fas fa-times"></i>
-            </button>
-            
-            <div id="modalBody" style="padding: 2rem;">
-                <!-- سيتم ملؤه بالجافاسكريبت -->
+                <?php endforeach; ?>
             </div>
-        </div>
+            
+            <!-- الترقيم -->
+            <?php if($total_pages > 1): ?>
+            <div class="pagination">
+                <!-- زر الصفحة السابقة -->
+                <?php if($page > 1): ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>">
+                            <i class="fas fa-chevron-right"></i> السابق
+                        </a>
+                    </li>
+                <?php else: ?>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-right"></i> السابق</span>
+                    </li>
+                <?php endif; ?>
+                
+                <!-- أرقام الصفحات -->
+                <?php 
+                $start_page = max(1, $page - 2);
+                $end_page = min($total_pages, $page + 2);
+                
+                for($i = $start_page; $i <= $end_page; $i++): 
+                ?>
+                    <li class="page-item <?php echo $i == $page ? 'active' : ''; ?>">
+                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    </li>
+                <?php endfor; ?>
+                
+                <!-- زر الصفحة التالية -->
+                <?php if($page < $total_pages): ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($search) ? '&search='.urlencode($search) : ''; ?>">
+                            التالي <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                <?php else: ?>
+                    <li class="page-item disabled">
+                        <span class="page-link">التالي <i class="fas fa-chevron-left"></i></span>
+                    </li>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
 
-    <!-- الفوتر -->
-    <footer style="background: var(--dark-color); color: white; padding: 2rem 0; text-align: center;">
-        <div class="container">
-            <p>&copy; 2024 متجرنا الإلكتروني. جميع الحقوق محفوظة.</p>
-        </div>
-    </footer>
+   
+       
+       
+
+
 
     <script>
         // تأثيرات البطاقات
@@ -541,5 +722,4 @@ $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
             observer.observe(el);
         });
     </script>
-</body>
-</html>
+  <?php include 'footer.php'; ?>

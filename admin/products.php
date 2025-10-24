@@ -1,119 +1,205 @@
 <?php
 require_once '../config.php';
+// 📁 إعدادات رفع الصور
+define('UPLOAD_DIR', dirname(__DIR__) . '/uploads/'); // هذا يجعل المجلد "uploads" في جذر المشروع
+define('MAX_FILE_SIZE', 5 * 1024 * 1024); // الحد الأقصى للحجم (5 ميجابايت)
+define('ALLOWED_IMAGE_TYPES', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'jfif']);
 
+// التحقق من صلاحية المدير
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     header("Location: ../login.php");
     exit();
 }
 
-// جلب جميع المنتجات
+// جلب جميع المنتجات مع الصور
 try {
-    $stmt = $pdo->query("SELECT * FROM products ORDER BY created_at DESC");
+    $stmt = $pdo->query("
+        SELECT p.*, 
+               pi.image_name as primary_image
+        FROM products p 
+        LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
+        ORDER BY p.featured DESC, p.created_at DESC
+    ");
     $products = $stmt->fetchAll();
 } catch (PDOException $e) {
     $products = [];
     $error = "خطأ في جلب البيانات: " . $e->getMessage();
 }
 
-// معالجة إضافة/تعديل المنتجات
+// معالجة العمليات
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    // إضافة منتج جديد
     if (isset($_POST['add_product'])) {
-        $name = $_POST['name'];
-        $description = $_POST['description'];
-        $price = $_POST['price'];
-        $category = $_POST['category'];
-        $stock = $_POST['stock_quantity'];
-        
-        // معالجة رفع الصورة
-        $image_path = '';
-        if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-            $upload_dir = '../uploads/products/';
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $file_name = uniqid() . '.' . $file_extension;
-            $file_path = $upload_dir . $file_name;
-            
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $file_path)) {
-                $image_path = 'uploads/products/' . $file_name;
-            }
-        }
+        $S_NO = $_POST['S_NO'];
+        $Item_Code = $_POST['Item_Code'];
+        $Item_Name = $_POST['Item_Name'];
+        $Packing = $_POST['Packing'];
+        $Item_Group = $_POST['Item_Group'];
+        $Brand = $_POST['Brand'];
+        $featured = isset($_POST['featured']) ? 1 : 0;
         
         try {
-            $stmt = $pdo->prepare("INSERT INTO products (name, description, price, image_path, category, stock_quantity) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$name, $description, $price, $image_path, $category, $stock]);
+            // التحقق من عدم تكرار رمز المنتج
+            $check_stmt = $pdo->prepare("SELECT id FROM products WHERE Item_Code = ?");
+            $check_stmt->execute([$Item_Code]);
             
-            header("Location: products.php?success=1");
-            exit();
+            if ($check_stmt->fetch()) {
+                $error = "رمز المنتج موجود مسبقاً";
+            } else {
+                // إضافة المنتج
+                $stmt = $pdo->prepare("INSERT INTO products (S_NO, Item_Code, Item_Name, Packing, Item_Group, Brand, featured) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$S_NO, $Item_Code, $Item_Name, $Packing, $Item_Group, $Brand, $featured]);
+                
+                $product_id = $pdo->lastInsertId();
+                
+                // رفع الصور إذا وجدت
+                if (!empty($_FILES['images']['name'][0])) {
+                    uploadProductImages($pdo, $product_id);
+                }
+                
+                $_SESSION['success'] = "تمت إضافة المنتج بنجاح!";
+                header("Location: products.php");
+                exit();
+            }
         } catch (PDOException $e) {
             $error = "خطأ في إضافة المنتج: " . $e->getMessage();
         }
     }
     
-    // معالجة تحديث المنتج
+    // تحديث المنتج
     if (isset($_POST['update_product'])) {
         $product_id = $_POST['product_id'];
-        $name = $_POST['name'];
-        $description = $_POST['description'];
-        $price = $_POST['price'];
-        $category = $_POST['category'];
-        $stock = $_POST['stock_quantity'];
-        
-        // معالجة رفع الصورة الجديدة
-        $image_path = $_POST['current_image'] ?? '';
-        if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-            $upload_dir = '../uploads/products/';
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-            $file_name = uniqid() . '.' . $file_extension;
-            $file_path = $upload_dir . $file_name;
-            
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $file_path)) {
-                $image_path = 'uploads/products/' . $file_name;
-                // حذف الصورة القديمة إذا كانت موجودة
-                if (!empty($_POST['current_image']) && file_exists('../' . $_POST['current_image'])) {
-                    unlink('../' . $_POST['current_image']);
-                }
-            }
-        }
+        $S_NO = $_POST['S_NO'];
+        $Item_Code = $_POST['Item_Code'];
+        $Item_Name = $_POST['Item_Name'];
+        $Packing = $_POST['Packing'];
+        $Item_Group = $_POST['Item_Group'];
+        $Brand = $_POST['Brand'];
+        $featured = isset($_POST['featured']) ? 1 : 0;
         
         try {
-            $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, price = ?, image_path = ?, category = ?, stock_quantity = ? WHERE id = ?");
-            $stmt->execute([$name, $description, $price, $image_path, $category, $stock, $product_id]);
+            // التحقق من عدم تكرار رمز المنتج (استثناء المنتج الحالي)
+            $check_stmt = $pdo->prepare("SELECT id FROM products WHERE Item_Code = ? AND id != ?");
+            $check_stmt->execute([$Item_Code, $product_id]);
             
-            header("Location: products.php?success=1");
-            exit();
+            if ($check_stmt->fetch()) {
+                $error = "رمز المنتج موجود مسبقاً";
+            } else {
+                // تحديث المنتج
+                $stmt = $pdo->prepare("UPDATE products SET S_NO = ?, Item_Code = ?, Item_Name = ?, Packing = ?, Item_Group = ?, Brand = ?, featured = ? WHERE id = ?");
+                $stmt->execute([$S_NO, $Item_Code, $Item_Name, $Packing, $Item_Group, $Brand, $featured, $product_id]);
+                
+                // رفع الصور جديدة إذا وجدت
+                if (!empty($_FILES['images']['name'][0])) {
+                    uploadProductImages($pdo, $product_id);
+                }
+                
+                $_SESSION['success'] = "تم تحديث المنتج بنجاح!";
+                header("Location: products.php");
+                exit();
+            }
         } catch (PDOException $e) {
             $error = "خطأ في تحديث المنتج: " . $e->getMessage();
         }
     }
     
-    // معالجة حذف المنتج
+    // حذف المنتج
     if (isset($_POST['delete_product'])) {
         $product_id = $_POST['product_id'];
         
         try {
-            // جلب مسار الصورة لحذفها
-            $stmt = $pdo->prepare("SELECT image_path FROM products WHERE id = ?");
+            // جلب الصور المرتبطة
+            $stmt = $pdo->prepare("SELECT image_name FROM product_images WHERE product_id = ?");
             $stmt->execute([$product_id]);
-            $product = $stmt->fetch();
+            $images = $stmt->fetchAll();
             
-            if ($product && $product['image_path'] && file_exists('../' . $product['image_path'])) {
-                unlink('../' . $product['image_path']);
+            // حذف الملفات من السيرفر
+            foreach ($images as $image) {
+                $file_path = UPLOAD_DIR . $image['image_name'];
+                if (file_exists($file_path)) {
+                    unlink($file_path);
+                }
             }
             
+            // الحذف من قاعدة البيانات (سيحذف تلقائياً الصور بسبب CASCADE)
             $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
             $stmt->execute([$product_id]);
             
-            header("Location: products.php?success=1");
+            $_SESSION['success'] = "تم حذف المنتج بنجاح!";
+            header("Location: products.php");
             exit();
         } catch (PDOException $e) {
             $error = "خطأ في حذف المنتج: " . $e->getMessage();
+        }
+    }
+    
+    // تبديل حالة المميز
+    if (isset($_POST['toggle_featured'])) {
+        $product_id = $_POST['product_id'];
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE products SET featured = NOT featured WHERE id = ?");
+            $stmt->execute([$product_id]);
+            
+            $_SESSION['success'] = "تم تغيير حالة المنتج المميز!";
+            header("Location: products.php");
+            exit();
+        } catch (PDOException $e) {
+            $error = "خطأ في تغيير الحالة: " . $e->getMessage();
+        }
+    }
+}
+
+// دالة رفع الصور
+function uploadProductImages($pdo, $product_id) {
+    if (!is_dir(UPLOAD_DIR)) {
+        mkdir(UPLOAD_DIR, 0755, true);
+    }
+    
+    $is_first = true;
+    
+    foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
+        if ($_FILES['images']['error'][$key] !== UPLOAD_ERR_OK) {
+            continue;
+        }
+        
+        // التحقق من حجم الملف
+        if ($_FILES['images']['size'][$key] > MAX_FILE_SIZE) {
+            throw new Exception("حجم الملف كبير جداً");
+        }
+        
+        // التحقق من نوع الملف
+        // $file_info = pathinfo($_FILES['images']['name'][$key]);
+        // $extension = strtolower($file_info['extension']);
+        
+        // if (!in_array($extension, ALLOWED_IMAGE_TYPES)) {
+        //     throw new Exception("نوع الملف غير مسموح به");
+        // }
+        $file_info = pathinfo($_FILES['images']['name'][$key]);
+            $extension = strtolower($file_info['extension'] ?? '');
+
+            $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $file_mime = mime_content_type($tmp_name);
+
+            if (!in_array($extension, ALLOWED_IMAGE_TYPES) || !in_array($file_mime, $allowed_types)) {
+                throw new Exception("نوع الملف غير مسموح به ($extension - $file_mime)");
+            }
+
+        // إنشاء اسم فريد للملف
+        $file_name = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9\._-]/', '', $file_info['filename']) . '.' . $extension;
+        $file_path = UPLOAD_DIR . $file_name;
+        
+        // التحقق من أن الملف صورة حقيقية
+        if (!getimagesize($tmp_name)) {
+            throw new Exception("الملف ليس صورة صالحة");
+        }
+        
+        if (move_uploaded_file($tmp_name, $file_path)) {
+            $is_primary = $is_first ? 1 : 0;
+            $stmt = $pdo->prepare("INSERT INTO product_images (product_id, image_name, is_primary) VALUES (?, ?, ?)");
+            $stmt->execute([$product_id, $file_name, $is_primary]);
+            $is_first = false;
         }
     }
 }
@@ -700,6 +786,248 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 0.8rem;
             font-weight: 600;
         }
+        /* تنسيقات النماذج */
+          
+            /* تنسيقات عرض المنتج */
+            .product-view-container {
+                font-family: inherit;
+            }
+
+            .product-view-header {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 25px;
+                align-items: flex-start;
+            }
+
+            .product-main-image {
+                width: 150px;
+                height: 150px;
+                border-radius: 8px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+
+            .product-main-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .no-image-large {
+                width: 100%;
+                height: 100%;
+                background: #f8f9fa;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: #6c757d;
+            }
+
+            .product-basic-info {
+                flex: 1;
+            }
+
+            .product-title {
+                margin: 0 0 15px 0;
+                color: var(--primary-color);
+                font-size: 1.4rem;
+            }
+
+            .product-code-section {
+                margin-bottom: 8px;
+            }
+
+            .product-code-section .label {
+                font-weight: bold;
+                color: #555;
+            }
+
+            .product-code-section .value {
+                margin-right: 8px;
+            }
+
+            .product-code-section .value.code {
+                background: #e9ecef;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-family: monospace;
+            }
+
+            .featured-badge {
+                background: var(--warning-color);
+                color: white;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                margin-top: 10px;
+            }
+
+            .product-details-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                margin-bottom: 25px;
+            }
+
+            .detail-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 10px 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .detail-item .label {
+                font-weight: bold;
+                color: #555;
+            }
+
+            .detail-item .value {
+                color: #333;
+            }
+
+            /* تنسيقات الإدخال */
+           
+            .file-input-wrapper {
+                position: relative;
+                border: 2px dashed #ddd;
+                border-radius: 4px;
+                padding: 20px;
+                text-align: center;
+                transition: border-color 0.3s;
+            }
+
+            .file-input-wrapper:hover {
+                border-color: var(--primary-color);
+            }
+
+            .file-input-label {
+                color: #666;
+                cursor: pointer;
+            }
+
+            .file-input-wrapper input[type="file"] {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                opacity: 0;
+                cursor: pointer;
+            }
+
+            .file-name {
+                margin-top: 8px;
+                font-size: 0.9rem;
+                color: #666;
+                display: none;
+            }
+
+            /* تنسيقات الأزرار */
+            .btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 1rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                transition: background-color 0.3s;
+            }
+
+            .btn-success {
+                background: var(--success-color);
+                color: white;
+            }
+
+            .btn-primary {
+                background: var(--primary-color);
+                color: white;
+            }
+
+            .btn-danger {
+                background: var(--danger-color);
+                color: white;
+            }
+
+            .btn-secondary {
+                background: #6c757d;
+                color: white;
+            }
+
+            .btn:hover {
+                opacity: 0.9;
+            }
+
+            /* تنسيقات الشبكات */
+            .product-images-grid,
+            .current-images-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+                margin-top: 10px;
+            }
+
+            .current-image-item {
+                position: relative;
+                width: 100px;
+                height: 100px;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .current-image-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .remove-image-btn {
+                position: absolute;
+                top: 5px;
+                left: 5px;
+                background: rgba(220, 53, 69, 0.8);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 25px;
+                height: 25px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* تحسينات للشاشات الصغيرة */
+            @media (max-width: 768px) {
+                .modal-content {
+                    width: 95%;
+                    margin: 20px;
+                }
+                
+                .product-view-header {
+                    flex-direction: column;
+                    text-align: center;
+                }
+                
+                .product-main-image {
+                    align-self: center;
+                }
+                
+                .product-details-grid {
+                    grid-template-columns: 1fr;
+                }
+                
+                .form-row {
+                    flex-direction: column;
+                    gap: 0;
+                }
+            }
     </style>
 </head>
 <body>
@@ -737,6 +1065,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
                 <div class="card-body">
+                    <?php if (isset($_SESSION['success'])): ?>
+                        <div class="alert alert-success">
+                            <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($error)): ?>
+                        <div class="alert alert-danger">
+                            <?php echo $error; ?>
+                        </div>
+                    <?php endif; ?>
+                    
                     <?php if (empty($products)): ?>
                         <div style="text-align: center; padding: 40px; color: var(--secondary-color);">
                             <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 15px;"></i>
@@ -752,62 +1092,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <thead>
                                     <tr>
                                         <th data-translate="image">الصورة</th>
-                                        <th data-translate="product_name">اسم المنتج</th>
-                                        <th data-translate="price">السعر</th>
-                                        <th data-translate="category">الفئة</th>
-                                        <th data-translate="stock">المخزن</th>
+                                        <th data-translate="serial_number">الرقم التسلسلي</th>
+                                        <th data-translate="item_code">رمز المنتج</th>
+                                        <th data-translate="item_name">اسم المنتج</th>
+                                        <th data-translate="packing">التغليف</th>
+                                        <th data-translate="item_group">المجموعة</th>
+                                        <th data-translate="brand">العلامة التجارية</th>
+                                        <th data-translate="featured">مميز</th>
                                         <th data-translate="created_date">تاريخ الإضافة</th>
                                         <th data-translate="actions">الإجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($products as $product): ?>
+                                        
                                     <tr>
                                         <td>
-                                            <?php if ($product['image_path']): ?>
-                                                <img src="../<?php echo $product['image_path']; ?>" 
-                                                     alt="<?php echo htmlspecialchars($product['name']); ?>" 
-                                                     class="product-image"
-                                                     data-product-image="<?php echo $product['image_path']; ?>">
+                                            <?php if (!empty($product['primary_image'])): ?>
+                                                <img src="../uploads/products/<?php echo $product['primary_image']; ?>" 
+                                                    alt="<?php echo htmlspecialchars($product['Item_Name']); ?>" 
+                                                    class="product-image"
+                                                    style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
                                             <?php else: ?>
-                                                <div class="no-image" data-translate="no_image">
-                                                    لا توجد صورة
+                                                <div class="no-image" style="width: 50px; height: 50px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; color: #6c757d; font-size: 0.8rem;">
+                                                    <i class="fas fa-image"></i>
                                                 </div>
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <strong data-product-name="<?php echo $product['id']; ?>"><?php echo htmlspecialchars($product['name']); ?></strong>
-                                            <?php if ($product['description']): ?>
-                                                <br><small style="color: #666;" data-product-description="<?php echo $product['id']; ?>"><?php echo substr($product['description'], 0, 50); ?>...</small>
+                                            <span data-product-sno="<?php echo $product['id']; ?>">
+                                                <?php echo htmlspecialchars($product['S_NO']); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span data-product-code="<?php echo $product['id']; ?>">
+                                                <?php echo htmlspecialchars($product['Item_Code']); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <strong data-product-name="<?php echo $product['id']; ?>">
+                                                <?php echo htmlspecialchars($product['Item_Name']); ?>
+                                            </strong>
+                                            <?php if ($product['featured']): ?>
+                                                <br><span class="badge badge-warning" style="font-size: 0.7rem;">مميز</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <span style="font-weight: bold; color: var(--primary-color);" data-product-price="<?php echo $product['id']; ?>">
-                                                <?php echo number_format($product['price'], 2); ?> <span data-translate="currency">ر.س</span>
+                                            <span data-product-packing="<?php echo $product['id']; ?>">
+                                                <?php echo htmlspecialchars($product['Packing']); ?>
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge" style="background: #e9ecef; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;" data-product-category="<?php echo $product['id']; ?>">
-                                                <?php echo htmlspecialchars($product['category']); ?>
+                                            <span class="badge" style="background: #e9ecef; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;" data-product-group="<?php echo $product['id']; ?>">
+                                                <?php echo htmlspecialchars($product['Item_Group']); ?>
                                             </span>
                                         </td>
                                         <td>
-                                            <?php
-                                            $stock_class = '';
-                                            if ($product['stock_quantity'] > 10) {
-                                                $stock_class = 'in-stock';
-                                                $stock_style = 'background: rgba(40, 167, 69, 0.2); color: #155724;';
-                                            } else if ($product['stock_quantity'] > 0) {
-                                                $stock_class = 'low-stock';
-                                                $stock_style = 'background: rgba(255, 193, 7, 0.2); color: #856404;';
-                                            } else {
-                                                $stock_class = 'out-of-stock';
-                                                $stock_style = 'background: rgba(220, 53, 69, 0.2); color: #721c24;';
-                                            }
-                                            ?>
-                                            <span class="stock-badge <?php echo $stock_class; ?>" style="<?php echo $stock_style; ?>" data-product-stock="<?php echo $product['id']; ?>">
-                                                <?php echo $product['stock_quantity']; ?>
+                                            <span data-product-brand="<?php echo $product['id']; ?>">
+                                                <?php echo htmlspecialchars($product['Brand']); ?>
                                             </span>
+                                        </td>
+                                        <td>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                                <button type="submit" name="toggle_featured" class="btn btn-sm <?php echo $product['featured'] ? 'btn-warning' : 'btn-secondary'; ?>">
+                                                    <i class="fas fa-star"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                         <td data-product-date="<?php echo $product['id']; ?>">
                                             <?php echo date('Y-m-d', strtotime($product['created_at'])); ?>
@@ -816,28 +1167,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <div class="actions">
                                                 <button class="btn btn-info view-product-btn" 
                                                         data-product-id="<?php echo $product['id']; ?>"
-                                                        data-product-name="<?php echo htmlspecialchars($product['name']); ?>"
-                                                        data-product-description="<?php echo htmlspecialchars($product['description']); ?>"
-                                                        data-product-price="<?php echo $product['price']; ?>"
-                                                        data-product-category="<?php echo htmlspecialchars($product['category']); ?>"
-                                                        data-product-stock="<?php echo $product['stock_quantity']; ?>"
-                                                        data-product-image="<?php echo $product['image_path']; ?>"
+                                                        data-product-sno="<?php echo htmlspecialchars($product['S_NO']); ?>"
+                                                        data-product-code="<?php echo htmlspecialchars($product['Item_Code']); ?>"
+                                                        data-product-name="<?php echo htmlspecialchars($product['Item_Name']); ?>"
+                                                        data-product-packing="<?php echo htmlspecialchars($product['Packing']); ?>"
+                                                        data-product-group="<?php echo htmlspecialchars($product['Item_Group']); ?>"
+                                                        data-product-brand="<?php echo htmlspecialchars($product['Brand']); ?>"
+                                                        data-product-featured="<?php echo $product['featured']; ?>"
+                                                        data-product-image="<?php echo $product['primary_image']; ?>"
                                                         data-product-date="<?php echo date('Y-m-d', strtotime($product['created_at'])); ?>">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
                                                 <button class="btn btn-primary edit-product-btn" 
                                                         data-product-id="<?php echo $product['id']; ?>"
-                                                        data-product-name="<?php echo htmlspecialchars($product['name']); ?>"
-                                                        data-product-description="<?php echo htmlspecialchars($product['description']); ?>"
-                                                        data-product-price="<?php echo $product['price']; ?>"
-                                                        data-product-category="<?php echo htmlspecialchars($product['category']); ?>"
-                                                        data-product-stock="<?php echo $product['stock_quantity']; ?>"
-                                                        data-product-image="<?php echo $product['image_path']; ?>">
+                                                        data-product-sno="<?php echo htmlspecialchars($product['S_NO']); ?>"
+                                                        data-product-code="<?php echo htmlspecialchars($product['Item_Code']); ?>"
+                                                        data-product-name="<?php echo htmlspecialchars($product['Item_Name']); ?>"
+                                                        data-product-packing="<?php echo htmlspecialchars($product['Packing']); ?>"
+                                                        data-product-group="<?php echo htmlspecialchars($product['Item_Group']); ?>"
+                                                        data-product-brand="<?php echo htmlspecialchars($product['Brand']); ?>"
+                                                        data-product-featured="<?php echo $product['featured']; ?>">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn btn-danger delete-product-btn" 
                                                         data-product-id="<?php echo $product['id']; ?>"
-                                                        data-product-name="<?php echo htmlspecialchars($product['name']); ?>">
+                                                        data-product-name="<?php echo htmlspecialchars($product['Item_Name']); ?>">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -852,9 +1206,636 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </main>
     </div>
+<!-- نافذة إضافة منتج جديد -->
+<div class="modal" id="addProductModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> <span data-translate="add_new_product">إضافة منتج جديد</span></h3>
+            <button class="close-btn">&times;</button>
+        </div>
+        <form method="POST" enctype="multipart/form-data" id="addProductForm">
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="S_NO">الرقم التسلسلي</label> *
+                        <input type="number" class="form-control" id="S_NO" name="S_NO" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Item_Code">رمز المنتج</label> *
+                        <input type="text" class="form-control" id="Item_Code" name="Item_Code" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="Item_Name">اسم المنتج</label> *
+                    <textarea class="form-control" id="Item_Name" name="Item_Name" rows="2" required></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="Packing">التغليف</label>
+                        <input type="text" class="form-control" id="Packing" name="Packing">
+                    </div>
+                    <div class="form-group">
+                        <label for="Item_Group">المجموعة</label>
+                        <input type="text" class="form-control" id="Item_Group" name="Item_Group">
+                    </div>
+                    <div class="form-group">
+                        <label for="Brand">العلامة التجارية</label>
+                        <input type="text" class="form-control" id="Brand" name="Brand">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="images">صور المنتج</label>
+                    <div class="file-input-wrapper">
+                        <div class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span style="margin-right: 8px;">اختر صور للمنتج (يمكن اختيار أكثر من صورة)</span>
+                        </div>
+                        <input type="file" class="form-control" id="images" name="images[]" multiple accept="image/*">
+                    </div>
+                    <div class="file-name" id="addFileNames"></div>
+                    <small class="form-text text-muted">الصورة الأولى ستكون الصورة الرئيسية للمنتج</small>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="featured" name="featured" value="1">
+                    <label class="form-check-label" for="featured">منتج مميز</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-btn" data-translate="cancel">إلغاء</button>
+                <button type="submit" class="btn btn-success" name="add_product">
+                    <i class="fas fa-save"></i> <span data-translate="add_product">إضافة المنتج</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- نافذة إضافة منتج جديد -->
+<div class="modal" id="addProductModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus"></i> <span data-translate="add_new_product">إضافة منتج جديد</span></h3>
+            <button class="close-btn">&times;</button>
+        </div>
+        <form method="POST" enctype="multipart/form-data" id="addProductForm">
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="S_NO">الرقم التسلسلي</label> *
+                        <input type="number" class="form-control" id="S_NO" name="S_NO" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="Item_Code">رمز المنتج</label> *
+                        <input type="text" class="form-control" id="Item_Code" name="Item_Code" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="Item_Name">اسم المنتج</label> *
+                    <textarea class="form-control" id="Item_Name" name="Item_Name" rows="2" required></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="Packing">التغليف</label>
+                        <input type="text" class="form-control" id="Packing" name="Packing">
+                    </div>
+                    <div class="form-group">
+                        <label for="Item_Group">المجموعة</label>
+                        <input type="text" class="form-control" id="Item_Group" name="Item_Group">
+                    </div>
+                    <div class="form-group">
+                        <label for="Brand">العلامة التجارية</label>
+                        <input type="text" class="form-control" id="Brand" name="Brand">
+                    </div>
+                </div>
+                
+                <!-- حقل رفع الصور المحسن -->
+                <div class="form-group">
+                    <label for="images" class="form-label">صور المنتج</label>
+                    <div class="image-upload-container">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-images"></i>
+                            </div>
+                            <div class="upload-text">
+                                <h4>اسحب وأفلت الصور هنا</h4>
+                                <p>أو انقر لاختيار الصور</p>
+                            </div>
+                            <input type="file" class="form-control" id="images" name="images[]" multiple accept="image/*" hidden>
+                            <button type="button" class="btn btn-outline-primary" id="browseBtn">
+                                <i class="fas fa-folder-open"></i> تصفح الصور
+                            </button>
+                        </div>
+                        <div class="upload-requirements">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                الصيغ المسموحة: JPG, PNG, GIF, WEBP | الحد الأقصى: 5MB للصورة
+                            </small>
+                        </div>
+                        <div class="selected-images" id="selectedImages">
+                            <!-- سيتم عرض الصور المختارة هنا -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="featured" name="featured" value="1">
+                    <label class="form-check-label" for="featured">منتج مميز</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-btn" data-translate="cancel">إلغاء</button>
+                <button type="submit" class="btn btn-success" name="add_product">
+                    <i class="fas fa-save"></i> <span data-translate="add_product">إضافة المنتج</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
+<style>
+        .image-upload-container {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .image-upload-container.dragover {
+            border-color: var(--primary-color);
+            background: rgba(0, 123, 255, 0.05);
+        }
+
+        .upload-area {
+            text-align: center;
+            padding: 30px 20px;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .upload-text h4 {
+            margin: 0 0 8px 0;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .upload-text p {
+            margin: 0 0 20px 0;
+            color: #6c757d;
+        }
+
+        #browseBtn {
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+
+        .upload-requirements {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .upload-requirements small {
+            color: #6c757d;
+        }
+
+        .selected-images {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .selected-images.active {
+            display: block;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .image-preview {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .image-preview:hover {
+            transform: translateY(-2px);
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-actions {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .image-info {
+            padding: 8px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .image-name {
+            font-size: 0.75rem;
+            color: #495057;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .image-size {
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+
+        .no-images {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        .no-images i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* تحسينات للشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .images-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+            
+            .image-preview img {
+                height: 100px;
+            }
+            
+            .upload-area {
+                padding: 20px 15px;
+            }
+            
+            .upload-icon {
+                font-size: 2.5rem;
+            }
+        }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('images');
+    const browseBtn = document.getElementById('browseBtn');
+    const selectedImages = document.getElementById('selectedImages');
+    const uploadContainer = document.querySelector('.image-upload-container');
+
+    // فتح نافذة اختيار الملفات عند النقر على الزر
+    browseBtn.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    // فتح نافذة اختيار الملفات عند النقر على منطقة الرفع
+    uploadArea.addEventListener('click', function(e) {
+        if (e.target !== browseBtn) {
+            fileInput.click();
+        }
+    });
+
+    // دعم سحب وإفلات الملفات
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadContainer.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        if (!uploadArea.contains(e.relatedTarget)) {
+            uploadContainer.classList.remove('dragover');
+        }
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadContainer.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    // التعامل مع اختيار الملفات
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            selectedImages.classList.add('active');
+            selectedImages.innerHTML = '<h5>الصور المختارة:</h5><div class="images-grid" id="imagesGrid"></div>';
+            const imagesGrid = document.getElementById('imagesGrid');
+            
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const imagePreview = document.createElement('div');
+                        imagePreview.className = 'image-preview';
+                        imagePreview.innerHTML = `
+                            <img src="${e.target.result}" alt="${file.name}">
+                            <div class="image-actions">
+                                <button type="button" class="btn btn-danger btn-sm remove-image" data-index="${index}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="image-info">
+                                <div class="image-name">${file.name}</div>
+                                <div class="image-size">${formatFileSize(file.size)}</div>
+                            </div>
+                        `;
+                        imagesGrid.appendChild(imagePreview);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // إضافة حدث إزالة الصور
+            document.querySelectorAll('.remove-image').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    removeImage(index);
+                });
+            });
+        }
+    }
+
+    function removeImage(index) {
+        // إنشاء DataTransfer جديد لإدارة الملفات
+        const dt = new DataTransfer();
+        const files = fileInput.files;
+        
+        // إضافة جميع الملفات ما عدا الملف المراد إزالته
+        for (let i = 0; i < files.length; i++) {
+            if (i !== index) {
+                dt.items.add(files[i]);
+            }
+        }
+        
+        // تحديث input الملفات
+        fileInput.files = dt.files;
+        
+        // إعادة تحميل المعاينات
+        if (fileInput.files.length > 0) {
+            handleFiles(fileInput.files);
+        } else {
+            selectedImages.classList.remove('active');
+            selectedImages.innerHTML = '';
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // التحقق من الملفات قبل الإرسال
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+        const files = fileInput.files;
+        let hasError = false;
+        
+        // التحقق من حجم الملفات
+        Array.from(files).forEach(file => {
+            if (file.size > 5 * 1024 * 1024) { // 5MB
+                alert(`حجم ملف ${file.name} كبير جداً. الحد الأقصى المسموح به هو 5MB`);
+                hasError = true;
+            }
+        });
+        
+        if (hasError) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+<!-- نافذة عرض بيانات المنتج -->
+<div class="modal" id="viewProductModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-eye"></i> <span data-translate="product_details">بيانات المنتج</span></h3>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="productDetailsContent">
+                <div class="product-view-container">
+                    <div class="product-view-header">
+                        <div class="product-image-section">
+                            <div id="viewProductImage" class="product-main-image">
+                                <!-- سيتم تحميل الصورة هنا -->
+                            </div>
+                        </div>
+                        <div class="product-basic-info">
+                            <h2 id="viewItemName" class="product-title"></h2>
+                            <div class="product-code-section">
+                                <span class="label">الرقم التسلسلي:</span>
+                                <span id="viewS_NO" class="value"></span>
+                            </div>
+                            <div class="product-code-section">
+                                <span class="label">رمز المنتج:</span>
+                                <span id="viewItemCode" class="value code"></span>
+                            </div>
+                            <div id="viewFeaturedBadge" class="featured-badge" style="display: none;">
+                                <i class="fas fa-star"></i> منتج مميز
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="product-details-grid">
+                        <div class="detail-item">
+                            <span class="label">التغليف:</span>
+                            <span id="viewPacking" class="value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">المجموعة:</span>
+                            <span id="viewItemGroup" class="value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">العلامة التجارية:</span>
+                            <span id="viewBrand" class="value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">تاريخ الإضافة:</span>
+                            <span id="viewCreatedAt" class="value"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="product-images-section" id="productImagesSection" style="display: none;">
+                        <h4>صور المنتج</h4>
+                        <div class="product-images-grid" id="productImagesGrid">
+                            <!-- سيتم تحميل الصور الإضافية هنا -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary close-btn" data-translate="close">إغلاق</button>
+            <button type="button" class="btn btn-primary" id="editFromViewBtn">
+                <i class="fas fa-edit"></i> <span data-translate="edit_product">تعديل المنتج</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة تعديل المنتج -->
+<div class="modal" id="editProductModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> <span data-translate="edit_product">تعديل المنتج</span></h3>
+            <button class="close-btn">&times;</button>
+        </div>
+        <form method="POST" enctype="multipart/form-data" id="editProductForm">
+            <input type="hidden" id="edit_product_id" name="product_id">
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_S_NO">الرقم التسلسلي</label> *
+                        <input type="number" class="form-control" id="edit_S_NO" name="S_NO" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_Item_Code">رمز المنتج</label> *
+                        <input type="text" class="form-control" id="edit_Item_Code" name="Item_Code" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_Item_Name">اسم المنتج</label> *
+                    <textarea class="form-control" id="edit_Item_Name" name="Item_Name" rows="2" required></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_Packing">التغليف</label>
+                        <input type="text" class="form-control" id="edit_Packing" name="Packing">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_Item_Group">المجموعة</label>
+                        <input type="text" class="form-control" id="edit_Item_Group" name="Item_Group">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_Brand">العلامة التجارية</label>
+                        <input type="text" class="form-control" id="edit_Brand" name="Brand">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit_images">إضافة صور جديدة</label>
+                    <div class="file-input-wrapper">
+                        <div class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span style="margin-right: 8px;">إضافة صور جديدة للمنتج</span>
+                        </div>
+                        <input type="file" class="form-control" id="edit_images" name="images[]" multiple accept="image/*">
+                    </div>
+                    <div class="file-name" id="editFileNames"></div>
+                    <small class="form-text text-muted">سيتم إضافة الصور الجديدة إلى الصور الحالية</small>
+                </div>
+                
+                <div class="current-images-section" id="currentImagesSection" style="display: none;">
+                    <label>الصور الحالية:</label>
+                    <div class="current-images-grid" id="currentImagesGrid">
+                        <!-- سيتم تحميل الصور الحالية هنا -->
+                    </div>
+                </div>
+                
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="edit_featured" name="featured" value="1">
+                    <label class="form-check-label" for="edit_featured">منتج مميز</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-btn" data-translate="cancel">إلغاء</button>
+                <button type="submit" class="btn btn-primary" name="update_product">
+                    <i class="fas fa-save"></i> <span data-translate="save_changes">حفظ التغييرات</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- نافذة تأكيد الحذف -->
+<div class="modal" id="deleteProductModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-trash"></i> <span data-translate="confirm_delete">تأكيد الحذف</span></h3>
+            <button class="close-btn">&times;</button>
+        </div>
+        <form method="POST" id="deleteProductForm">
+            <input type="hidden" id="delete_product_id" name="product_id">
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--danger-color); font-size: 2rem; margin-bottom: 15px;"></i>
+                    <p data-translate="confirm_delete_message">هل أنت متأكد من حذف هذا المنتج؟</p>
+                    <p style="color: var(--danger-color); font-weight: bold;" data-translate="delete_warning">هذا الإجراء لا يمكن التراجع عنه!</p>
+                    <div class="product-to-delete">
+                        <strong>المنتج المراد حذفه:</strong>
+                        <p id="deleteProductName" style="font-weight: bold; margin-top: 5px;"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-btn" data-translate="cancel">إلغاء</button>
+                <button type="submit" class="btn btn-danger" name="delete_product">
+                    <i class="fas fa-trash"></i> <span data-translate="yes_delete">نعم، احذف المنتج</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
     <!-- نافذة إضافة منتج جديد -->
-    <div class="modal" id="addProductModal">
+    <!-- <div class="modal" id="addProductModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-plus"></i> <span data-translate="add_new_product">إضافة منتج جديد</span></h3>
@@ -909,10 +1890,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </form>
         </div>
-    </div>
+    </div> -->
 
     <!-- نافذة عرض بيانات المنتج -->
-    <div class="modal" id="viewProductModal">
+    <!-- <div class="modal" id="viewProductModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-eye"></i> <span data-translate="product_details">بيانات المنتج</span></h3>
@@ -920,7 +1901,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="modal-body">
                 <div id="productDetailsContent">
-                    <!-- سيتم تحميل المحتوى هنا عبر JavaScript -->
+                    -- سيتم تحميل المحتوى هنا عبر JavaScript --
                 </div>
             </div>
             <div class="modal-footer">
@@ -930,10 +1911,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </button>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- نافذة تعديل المنتج -->
-    <div class="modal" id="editProductModal">
+    <!-- <div class="modal" id="editProductModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-edit"></i> <span data-translate="edit_product">تعديل المنتج</span></h3>
@@ -991,10 +1972,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </form>
         </div>
-    </div>
+    </div> -->
 
     <!-- نافذة تأكيد الحذف -->
-    <div class="modal" id="deleteProductModal">
+    <!-- <div class="modal" id="deleteProductModal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h3><i class="fas fa-trash"></i> <span data-translate="confirm_delete">تأكيد الحذف</span></h3>
@@ -1015,7 +1996,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </form>
         </div>
-    </div>
+    </div> -->
 
     <!-- زر الترجمة العائم -->
     <button class="translate-btn" id="translateBtn">
@@ -1023,6 +2004,228 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </button>
 
     <script>
+        // JavaScript لإدارة النماذج والعروض
+document.addEventListener('DOMContentLoaded', function() {
+    // عناصر النماذج
+    const addProductModal = document.getElementById('addProductModal');
+    const viewProductModal = document.getElementById('viewProductModal');
+    const editProductModal = document.getElementById('editProductModal');
+    const deleteProductModal = document.getElementById('deleteProductModal');
+    
+    // أزرار الفتح والإغلاق
+    const closeButtons = document.querySelectorAll('.close-btn');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const addFirstProductBtn = document.getElementById('addFirstProductBtn');
+    
+    // أزرار الإجراءات في الجدول
+    const viewProductBtns = document.querySelectorAll('.view-product-btn');
+    const editProductBtns = document.querySelectorAll('.edit-product-btn');
+    const deleteProductBtns = document.querySelectorAll('.delete-product-btn');
+    
+    // فتح نافذة الإضافة
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', () => openModal(addProductModal));
+    }
+    if (addFirstProductBtn) {
+        addFirstProductBtn.addEventListener('click', () => openModal(addProductModal));
+    }
+    
+    // إغلاق النماذج
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            closeModal(modal);
+        });
+    });
+    
+    // إغلاق النماذج عند النقر خارجها
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            closeModal(event.target);
+        }
+    });
+    
+    // إدارة عرض الملفات
+    const addFileInput = document.getElementById('images');
+    const editFileInput = document.getElementById('edit_images');
+    
+    if (addFileInput) {
+        addFileInput.addEventListener('change', function() {
+            updateFileNames(this, 'addFileNames');
+        });
+    }
+    
+    if (editFileInput) {
+        editFileInput.addEventListener('change', function() {
+            updateFileNames(this, 'editFileNames');
+        });
+    }
+    
+    // عرض بيانات المنتج
+    viewProductBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productData = {
+                id: this.dataset.productId,
+                S_NO: this.dataset.productSno,
+                Item_Code: this.dataset.productCode,
+                Item_Name: this.dataset.productName,
+                Packing: this.dataset.productPacking,
+                Item_Group: this.dataset.productGroup,
+                Brand: this.dataset.productBrand,
+                featured: this.dataset.productFeatured,
+                image: this.dataset.productImage,
+                date: this.dataset.productDate
+            };
+            showProductDetails(productData);
+            openModal(viewProductModal);
+        });
+    });
+    
+    // تعديل المنتج
+    editProductBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productData = {
+                id: this.dataset.productId,
+                S_NO: this.dataset.productSno,
+                Item_Code: this.dataset.productCode,
+                Item_Name: this.dataset.productName,
+                Packing: this.dataset.productPacking,
+                Item_Group: this.dataset.productGroup,
+                Brand: this.dataset.productBrand,
+                featured: this.dataset.productFeatured
+            };
+            fillEditForm(productData);
+            openModal(editProductModal);
+        });
+    });
+    
+    // حذف المنتج
+    deleteProductBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const productName = this.dataset.productName;
+            setupDeleteModal(productId, productName);
+            openModal(deleteProductModal);
+        });
+    });
+    
+    // الانتقال من العرض إلى التعديل
+    const editFromViewBtn = document.getElementById('editFromViewBtn');
+    if (editFromViewBtn) {
+        editFromViewBtn.addEventListener('click', function() {
+            closeModal(viewProductModal);
+            // هنا يمكنك إعادة تعبئة نموذج التعديل بالبيانات الحالية
+            openModal(editProductModal);
+        });
+    }
+});
+
+// الدوال المساعدة
+function openModal(modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function updateFileNames(fileInput, containerId) {
+    const container = document.getElementById(containerId);
+    if (fileInput.files.length > 0) {
+        const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
+        container.textContent = `الملفات المختارة: ${fileNames}`;
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function showProductDetails(product) {
+    // الصورة الرئيسية
+    const imageContainer = document.getElementById('viewProductImage');
+    if (product.image) {
+        imageContainer.innerHTML = `
+            <img src="../uploads/products/${product.image}" 
+                 alt="${product.Item_Name}" 
+                 class="product-main-img">
+        `;
+    } else {
+        imageContainer.innerHTML = `
+            <div class="no-image-large">
+                <i class="fas fa-image"></i>
+                <span>لا توجد صورة</span>
+            </div>
+        `;
+    }
+    
+    // المعلومات الأساسية
+    document.getElementById('viewItemName').textContent = product.Item_Name;
+    document.getElementById('viewS_NO').textContent = product.S_NO;
+    document.getElementById('viewItemCode').textContent = product.Item_Code;
+    document.getElementById('viewPacking').textContent = product.Packing || 'غير محدد';
+    document.getElementById('viewItemGroup').textContent = product.Item_Group || 'غير محدد';
+    document.getElementById('viewBrand').textContent = product.Brand || 'غير محدد';
+    document.getElementById('viewCreatedAt').textContent = product.date;
+    
+    // حالة المنتج المميز
+    const featuredBadge = document.getElementById('viewFeaturedBadge');
+    if (product.featured === '1') {
+        featuredBadge.style.display = 'block';
+    } else {
+        featuredBadge.style.display = 'none';
+    }
+    
+    // حفظ معرف المنتج للاستخدام لاحقاً
+    document.getElementById('editFromViewBtn').dataset.productId = product.id;
+}
+
+function fillEditForm(product) {
+    document.getElementById('edit_product_id').value = product.id;
+    document.getElementById('edit_S_NO').value = product.S_NO;
+    document.getElementById('edit_Item_Code').value = product.Item_Code;
+    document.getElementById('edit_Item_Name').value = product.Item_Name;
+    document.getElementById('edit_Packing').value = product.Packing || '';
+    document.getElementById('edit_Item_Group').value = product.Item_Group || '';
+    document.getElementById('edit_Brand').value = product.Brand || '';
+    document.getElementById('edit_featured').checked = product.featured === '1';
+    
+    // هنا يمكنك إضافة كود لجلب وعرض الصور الحالية
+    loadCurrentImages(product.id);
+}
+
+function setupDeleteModal(productId, productName) {
+    document.getElementById('delete_product_id').value = productId;
+    document.getElementById('deleteProductName').textContent = productName;
+}
+
+function loadCurrentImages(productId) {
+    // هذه الدالة تحتاج إلى تنفيذ AJAX لجلب الصور الحالية للمنتج
+    // مثال:
+    /*
+    fetch(`get_product_images.php?product_id=${productId}`)
+        .then(response => response.json())
+        .then(images => {
+            const container = document.getElementById('currentImagesGrid');
+            container.innerHTML = '';
+            
+            images.forEach(image => {
+                const imgElement = document.createElement('div');
+                imgElement.className = 'current-image-item';
+                imgElement.innerHTML = `
+                    <img src="../uploads/products/${image.image_name}" alt="صورة المنتج">
+                    <button type="button" class="remove-image-btn" data-image-id="${image.id}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                container.appendChild(imgElement);
+            });
+            
+            document.getElementById('currentImagesSection').style.display = 'block';
+        });
+    */
+}
         // نصوص الترجمة
         const translations = {
             ar: {

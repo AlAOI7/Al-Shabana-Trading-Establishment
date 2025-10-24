@@ -9,12 +9,15 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
 // معالجة إضافة/تعديل الخدمات
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_service'])) {
-        $title = $_POST['title'];
-        $description = $_POST['description'];
+        $title_ar = $_POST['title_ar'];
+        $title_en = $_POST['title_en'];
+        $description_ar = $_POST['description_ar'];
+        $description_en = $_POST['description_en'];
         $icon = $_POST['icon'];
         
-        $stmt = $pdo->prepare("INSERT INTO services (title, description, icon) VALUES (?, ?, ?)");
-        $stmt->execute([$title, $description, $icon]);
+        // تصحيح: إضافة جميع الأماكن في الاستعلام
+        $stmt = $pdo->prepare("INSERT INTO services (title, title_en, description, description_en, icon) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$title_ar, $title_en, $description_ar, $description_en, $icon]);
         
         header("Location: services.php?success=service_added");
         exit();
@@ -22,12 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (isset($_POST['update_service'])) {
         $service_id = $_POST['service_id'];
-        $title = $_POST['title'];
-        $description = $_POST['description'];
-        $icon = $_POST['icon'];
+        $title_ar = $_POST['title_ar'];
+        $title_en = $_POST['title_en'];
+        $description_ar = $_POST['description_ar'];
+        $description_en = $_POST['description_en'];
+        $icon = $_POST['icon']; // إضافة هذا المتغير المفقود
         
-        $stmt = $pdo->prepare("UPDATE services SET title = ?, description = ?, icon = ? WHERE id = ?");
-        $stmt->execute([$title, $description, $icon, $service_id]);
+        // تصحيح: إضافة المتغير الناقص وتصحيح ترتيب المتغيرات
+        $stmt = $pdo->prepare("UPDATE services SET title = ?, title_en = ?, description = ?, description_en = ?, icon = ? WHERE id = ?");
+        $stmt->execute([$title_ar, $title_en, $description_ar, $description_en, $icon, $service_id]);
         
         header("Location: services.php?success=service_updated");
         exit();
@@ -55,7 +61,6 @@ if (isset($_GET['edit_service'])) {
     $edit_service = $stmt->fetch();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -497,9 +502,62 @@ if (isset($_GET['edit_service'])) {
                     </span>
                 </div>
             <?php endif; ?>
-
+        <!-- نموذج إضافة خدمة -->
+                <div class="add-service-form">
+                    <h3><i class="fas fa-plus"></i> إضافة خدمة جديدة</h3>
+                 <form method="POST">
+    <?php if ($edit_service): ?>
+        <input type="hidden" name="service_id" value="<?php echo $edit_service['id']; ?>">
+        <input type="hidden" name="update_service" value="1">
+    <?php else: ?>
+        <input type="hidden" name="add_service" value="1">
+    <?php endif; ?>
+    
+    <div class="row">
+        <div class="col-6">
+            <div class="form-group">
+                <label for="title_ar">عنوان الخدمة (عربي)</label>
+                <input type="text" class="form-control" value="<?php echo $edit_service ? htmlspecialchars($edit_service['title']) : ''; ?>" id="title_ar" name="title_ar" required>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="form-group">
+                <label for="title_en">عنوان الخدمة (إنجليزي)</label>
+                <input type="text" class="form-control" value="<?php echo $edit_service ? htmlspecialchars($edit_service['title_en']) : ''; ?>" id="title_en" name="title_en" required>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="description_ar">وصف الخدمة (عربي)</label>
+        <textarea class="form-control" id="description_ar" name="description_ar" rows="3" required><?php echo $edit_service ? htmlspecialchars($edit_service['description']) : ''; ?></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="description_en">وصف الخدمة (إنجليزي)</label>
+        <textarea class="form-control" id="description_en" name="description_en" rows="3" required><?php echo $edit_service ? htmlspecialchars($edit_service['description_en']) : ''; ?></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="icon">أيقونة الخدمة (Font Awesome)</label>
+        <input type="text" class="form-control" id="icon" name="icon" 
+            value="<?php echo $edit_service ? htmlspecialchars($edit_service['icon']) : ''; ?>" 
+            placeholder="مثال: fas fa-fire" required>
+        <small class="text-muted">يمكنك اختيار الأيقونات من <a href="https://fontawesome.com/icons" target="_blank">Font Awesome</a></small>
+    </div>
+    
+    <button type="submit" name="<?php echo $edit_service ? 'update_service' : 'add_service'; ?>" class="btn btn-primary">
+        <i class="fas fa-save"></i> 
+        <?php echo $edit_service ? 'تحديث الخدمة' : 'إضافة الخدمة'; ?>
+    </button>
+    
+    <?php if ($edit_service): ?>
+        <a href="services.php" class="btn btn-secondary">إلغاء</a>
+    <?php endif; ?>
+</form>
+                </div>
             <!-- نموذج إضافة/تعديل الخدمة -->
-            <div class="card">
+            <!-- <div class="card">
                 <div class="card-header">
                     <h3>
                         <i class="fas fa-<?php echo $edit_service ? 'edit' : 'plus'; ?>"></i> 
@@ -557,7 +615,7 @@ if (isset($_GET['edit_service'])) {
                         <?php endif; ?>
                     </form>
                 </div>
-            </div>
+            </div> -->
 
             <!-- قائمة الخدمات -->
             <div class="card">

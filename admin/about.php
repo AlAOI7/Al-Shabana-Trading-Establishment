@@ -1,24 +1,66 @@
-<?php 
+<?php
 require_once '../config.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     header("Location: ../login.php");
     exit();
 }
-// جلب بيانات "من نحن" من الإعدادات
-$stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'about_us'");
-$about_us = $stmt->fetchColumn();
 
 // معالجة تحديث البيانات
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_about'])) {
-    $about_content = $_POST['about_content'];
-    $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'about_us'");
-    $stmt->execute([$about_content]);
-    
-    header("Location: about.php?success=updated");
-    exit();
+    try {
+        foreach ($_POST['sections'] as $id => $data) {
+            $stmt = $pdo->prepare("UPDATE about_page SET 
+                title_ar = ?, title_en = ?, content_ar = ?, content_en = ?, 
+                image = ?, updated_at = NOW() WHERE id = ?");
+            
+            $stmt->execute([
+                $data['title_ar'],
+                $data['title_en'],
+                $data['content_ar'],
+                $data['content_en'],
+                $data['image'],
+                $id
+            ]);
+        }
+        
+        // معالجة رفع الصور
+        if (!empty($_FILES['images']['name'][0])) {
+            foreach ($_FILES['images']['name'] as $section_id => $filename) {
+                if (!empty($filename)) {
+                    $target_dir = "../uploads/about/";
+                    if (!is_dir($target_dir)) {
+                        mkdir($target_dir, 0777, true);
+                    }
+                    
+                    $file_extension = pathinfo($filename, PATHINFO_EXTENSION);
+                    $new_filename = "about_" . $section_id . "_" . time() . "." . $file_extension;
+                    $target_file = $target_dir . $new_filename;
+                    
+                    if (move_uploaded_file($_FILES['images']['tmp_name'][$section_id], $target_file)) {
+                        $stmt = $pdo->prepare("UPDATE about_page SET image = ? WHERE id = ?");
+                        $stmt->execute([$new_filename, $section_id]);
+                    }
+                }
+            }
+        }
+        
+        $success = "تم تحديث بيانات من نحن بنجاح";
+    } catch (PDOException $e) {
+        $error = "خطأ في تحديث البيانات: " . $e->getMessage();
+    }
+}
+
+// جلب بيانات صفحة من نحن
+try {
+    $stmt = $pdo->query("SELECT * FROM about_page ORDER BY display_order ASC");
+    $about_sections = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $about_sections = [];
+    $error = "خطأ في جلب البيانات: " . $e->getMessage();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -28,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_about'])) {
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
-   <style>
+    <style>
         :root {
             --primary: #4361ee;
             --secondary: #3f37c9;
@@ -376,192 +418,221 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_about'])) {
             }
         }
     </style>
+        <style>
+        .about-management {
+            padding: 20px;
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #2c5aa0;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .section-title {
+            color: #2c5aa0;
+            font-size: 1.4rem;
+            margin: 0;
+        }
+        
+        .section-type {
+            background: #f8b500;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .language-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .language-tab {
+            padding: 0.5rem 1rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #666;
+        }
+        
+        .language-tab.active {
+            color: #2c5aa0;
+            border-bottom-color: #2c5aa0;
+        }
+        
+        .language-content {
+            display: none;
+        }
+        
+        .language-content.active {
+            display: block;
+        }
+        
+        .image-upload {
+            border: 2px dashed #ddd;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+        
+        .current-image {
+            max-width: 200px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard">
-          <?php include 'sidebar.php'; ?>
+        <?php include 'sidebar.php'; ?>
         
-        <!-- المحتوى الرئيسي -->
         <main class="main-content">
             <?php include 'admin_navbar.php'; ?>
-            <div class="header">
-                <h1><i class="fas fa-info-circle"></i> <span data-translate="about_us_management">إدارة صفحة "من نحن"</span></h1>
-                <p data-translate="about_us_desc">تعديل محتوى صفحة من نحن المعروضة للزوار</p>
-            </div>
+            
+            <div class="about-management">
+                <div class="header">
+                    <h1><i class="fas fa-info-circle"></i> إدارة صفحة من نحن</h1>
+                    <p>تعديل محتوى صفحة من نحن والترجمة</p>
+                </div>
 
-            <?php if (isset($_GET['success'])): ?>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> 
-                    <span data-translate="about_us_updated">تم تحديث محتوى "من نحن" بنجاح</span>
-                </div>
-            <?php endif; ?>
+                <?php if (isset($success)): ?>
+                    <div class="alert alert-success"><?php echo $success; ?></div>
+                <?php endif; ?>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-edit"></i> <span data-translate="about_us_content">محتوى صفحة "من نحن"</span></h3>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="form-group">
-                            <label for="about_content" data-translate="page_content">محتوى الصفحة</label>
-                            <textarea class="form-control" id="about_content" name="about_content" rows="15" 
-                                      placeholder="اكتب محتوى صفحة 'من نحن' هنا..."><?php echo htmlspecialchars($about_us ?: ''); ?></textarea>
-                        </div>
-                        
-                        <button type="submit" name="update_about" class="btn btn-primary">
-                            <i class="fas fa-save"></i> 
-                            <span data-translate="save_changes">حفظ التغييرات</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
+                <?php if (isset($error)): ?>
+                    <div class="alert alert-danger"><?php echo $error; ?></div>
+                <?php endif; ?>
 
-            <!-- معاينة الصفحة -->
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-eye"></i> <span data-translate="page_preview">معاينة الصفحة</span></h3>
-                </div>
-                <div class="card-body">
-                    <?php if ($about_us): ?>
-                        <div class="preview-box">
-                            <?php echo nl2br(htmlspecialchars($about_us)); ?>
+                <form method="POST" enctype="multipart/form-data">
+                    <?php foreach ($about_sections as $section): ?>
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <?php 
+                                    $section_names = [
+                                        'intro' => 'المقدمة',
+                                        'story' => 'القصة',
+                                        'official_details' => 'البيانات الرسمية',
+                                        'mission' => 'الرسالة',
+                                        'vision' => 'الرؤية',
+                                        'values' => 'القيم'
+                                    ];
+                                    echo $section_names[$section['section_type']] ?? $section['section_type'];
+                                    ?>
+                                </h3>
+                                <span class="section-type"><?php echo $section['section_type']; ?></span>
+                            </div>
+
+                            <!-- تبويبات اللغة -->
+                            <div class="language-tabs">
+                                <button type="button" class="language-tab active" data-lang="ar">العربية</button>
+                                <button type="button" class="language-tab" data-lang="en">English</button>
+                            </div>
+
+                            <!-- المحتوى العربي -->
+                            <div class="language-content active" data-lang="ar">
+                                <div class="form-group">
+                                    <label for="title_ar_<?php echo $section['id']; ?>">العنوان (عربي)</label>
+                                    <input type="text" class="form-control" id="title_ar_<?php echo $section['id']; ?>" 
+                                           name="sections[<?php echo $section['id']; ?>][title_ar]" 
+                                           value="<?php echo htmlspecialchars($section['title_ar']); ?>">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="content_ar_<?php echo $section['id']; ?>">المحتوى (عربي)</label>
+                                    <textarea class="form-control" id="content_ar_<?php echo $section['id']; ?>" 
+                                              name="sections[<?php echo $section['id']; ?>][content_ar]" 
+                                              rows="4"><?php echo htmlspecialchars($section['content_ar']); ?></textarea>
+                                </div>
+                            </div>
+
+                            <!-- المحتوى الإنجليزي -->
+                            <div class="language-content" data-lang="en">
+                                <div class="form-group">
+                                    <label for="title_en_<?php echo $section['id']; ?>">Title (English)</label>
+                                    <input type="text" class="form-control" id="title_en_<?php echo $section['id']; ?>" 
+                                           name="sections[<?php echo $section['id']; ?>][title_en]" 
+                                           value="<?php echo htmlspecialchars($section['title_en']); ?>">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="content_en_<?php echo $section['id']; ?>">Content (English)</label>
+                                    <textarea class="form-control" id="content_en_<?php echo $section['id']; ?>" 
+                                              name="sections[<?php echo $section['id']; ?>][content_en]" 
+                                              rows="4"><?php echo htmlspecialchars($section['content_en']); ?></textarea>
+                                </div>
+                            </div>
+
+                            <!-- رفع الصور (للقصة فقط) -->
+                            <?php if ($section['section_type'] === 'story'): ?>
+                                <div class="form-group">
+                                    <label>صورة القسم</label>
+                                    <?php if (!empty($section['image'])): ?>
+                                        <div>
+                                            <img src="../uploads/about/<?php echo htmlspecialchars($section['image']); ?>" 
+                                                 alt="الصورة الحالية" class="current-image">
+                                        </div>
+                                    <?php endif; ?>
+                                    <input type="file" name="images[<?php echo $section['id']; ?>]" 
+                                           class="form-control" accept="image/*">
+                                    <input type="hidden" name="sections[<?php echo $section['id']; ?>][image]" 
+                                           value="<?php echo htmlspecialchars($section['image']); ?>">
+                                </div>
+                            <?php else: ?>
+                                <input type="hidden" name="sections[<?php echo $section['id']; ?>][image]" 
+                                       value="<?php echo htmlspecialchars($section['image']); ?>">
+                            <?php endif; ?>
                         </div>
-                    <?php else: ?>
-                        <div class="empty-state">
-                            <i class="fas fa-info-circle"></i>
-                            <p data-translate="no_content">لا يوجد محتوى لعرضه. يرجى إضافة محتوى لصفحة "من نحن".</p>
+                    <?php endforeach; ?>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <button type="submit" name="update_about" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> حفظ جميع التغييرات
+                            </button>
                         </div>
-                    <?php endif; ?>
-                </div>
+                    </div>
+                </form>
             </div>
         </main>
     </div>
 
-    <!-- زر الترجمة العائم -->
-    <button class="translate-btn" id="translateBtn">
-        <i class="fas fa-language"></i>
-    </button>
-
     <script>
-        // نصوص الترجمة
-        const translations = {
-            ar: {
-                 "dashboard": "لوحة التحكم الرئيسية",
-                                "welcome": "مرحباً،",
-                "home": "الرئيسية",
-                "user_management": "إدارة المستخدمين",
-                "product_management": "إدارة المنتجات",
-                "service_management": "إدارة الخدمات",
-                "order_management": "إدارة الطلبات",
-                "about_us": "من نحن",
-                "contact_info": "بيانات التواصل",
-                "settings": "الإعدادات",
-                "logout": "تسجيل الخروج",
-                "profile": "الملف الشخصي",
-
-
-                // العناوين الرئيسية
-                "about_us_management": "من نحن - الإدارة",
-                "about_us_desc": "تعديل محتوى صفحة من نحن المعروضة للزوار",
-                "about_us_content": "محتوى صفحة \"من نحن\"",
-                "page_preview": "معاينة الصفحة",
+        // إدارة تبويبات اللغة
+        document.querySelectorAll('.language-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const sectionCard = this.closest('.section-card');
+                const lang = this.getAttribute('data-lang');
                 
-                // نماذج البيانات
-                "page_content": "محتوى الصفحة",
+                // تحديد التبويب النشط
+                sectionCard.querySelectorAll('.language-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
                 
-                // معاينة الصفحة
-                "no_content": "لا يوجد محتوى لعرضه. يرجى إضافة محتوى لصفحة \"من نحن\".",
-                
-                // أزرار
-                "save_changes": "حفظ التغييرات",
-                
-                // رسائل النجاح
-                "about_us_updated": "تم تحديث محتوى \"من نحن\" بنجاح"
-            },
-            en: {
-                  "dashboard": "Main Dashboard",
-                     "welcome": "Welcome,",
-                    "home": "Home",
-                    "user_management": "User Management",
-                    "product_management": "Product Management",
-                    "service_management": "Service Management",
-                    "order_management": "Order Management",
-                    "about_us": "About Us",
-                    "contact_info": "Contact Info",
-                    "settings": "Settings",
-                    "logout": "Logout",
-                    "profile": "Profile",
-                // العناوين الرئيسية
-                "about_us_management": "About Us - Admin",
-                "about_us_desc": "Edit the content of the About Us page displayed to visitors",
-                "about_us_content": "About Us Page Content",
-                "page_preview": "Page Preview",
-                
-                // نماذج البيانات
-                "page_content": "Page Content",
-                
-                // معاينة الصفحة
-                "no_content": "No content to display. Please add content to the About Us page.",
-                
-                // أزرار
-                "save_changes": "Save Changes",
-                
-                // رسائل النجاح
-                "about_us_updated": "About Us content updated successfully"
-            }
-        };
-
-        // حالة اللغة الحالية
-        let currentLang = localStorage.getItem('language') || 'ar';
-
-        // دالة لتطبيق الترجمة
-        function applyLanguage(lang) {
-            // تحديث النصوص في الصفحة
-            document.querySelectorAll('[data-translate]').forEach(element => {
-                const key = element.getAttribute('data-translate');
-                if (translations[lang][key]) {
-                    element.textContent = translations[lang][key];
-                }
+                // إظهار المحتوى المناسب
+                sectionCard.querySelectorAll('.language-content').forEach(content => {
+                    content.classList.remove('active');
+                    if (content.getAttribute('data-lang') === lang) {
+                        content.classList.add('active');
+                    }
+                });
             });
-
-            // تحديث النصوص في العناصر الأخرى
-            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
-                const placeholder = element.getAttribute('placeholder');
-                if (placeholder && translations[lang][placeholder]) {
-                    element.setAttribute('placeholder', translations[lang][placeholder]);
-                }
-            });
-
-            // تحديث اتجاه الصفحة
-            if (lang === 'ar') {
-                document.documentElement.dir = 'rtl';
-                document.documentElement.lang = 'ar';
-                document.title = 'من نحن - الإدارة';
-            } else {
-                document.documentElement.dir = 'ltr';
-                document.documentElement.lang = 'en';
-                document.title = 'About Us - Admin';
-            }
-
-            // حفظ اللغة في localStorage
-            localStorage.setItem('language', lang);
-            currentLang = lang;
-        }
-
-        // حدث النقر على زر الترجمة
-        document.getElementById('translateBtn').addEventListener('click', function() {
-            const newLang = currentLang === 'ar' ? 'en' : 'ar';
-            applyLanguage(newLang);
-        });
-
-        // تحسين تجربة الكتابة
-        document.getElementById('about_content').addEventListener('focus', function() {
-            this.style.minHeight = '300px';
-        });
-
-        // تطبيق اللغة عند تحميل الصفحة
-        document.addEventListener('DOMContentLoaded', function() {
-            applyLanguage(currentLang);
         });
     </script>
 </body>

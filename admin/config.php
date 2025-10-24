@@ -16,6 +16,12 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
+
+// إعدادات المسارات - تأكد من المسار الصحيح
+define('UPLOAD_DIR', $_SERVER['DOCUMENT_ROOT'] . '/Al-Shabana-Trading-Establishment/uploads/products/');
+define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
+define('ALLOWED_IMAGE_TYPES', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+
 // دالة التحقق من تسجيل الدخول
 function isLoggedIn() {
     return isset($_SESSION['user_id']);

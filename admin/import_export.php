@@ -6,9 +6,40 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     exit();
 }
 
-
 $success = '';
 $error = '';
+
+// دالة لإنشاء قالب CSV
+function generateTemplate() {
+    $template_data = [
+        ['S_NO', 'Item_Code', 'Item_Name', 'Packing', 'Item_Group', 'Brand', 'featured', 'image_name'],
+        ['2', 'PROD001', 'شوكولاتة حليب', '100 جرام', 'حلويات', 'شوكولاتا بارك', 'نعم', '1.jpg'],
+        ['3', 'PROD002', 'بسكويت شوكولاتة', '150 جرام', 'مخبوزات', 'بسكويتا', 'لا', '2.jpg'],
+        ['4', 'PROD003', 'عصير برتقال', '1 لتر', 'مشروبات', 'عصائر طبيعية', 'نعم', '3.jpg'],
+        ['5', 'PROD004', 'معجون أسنان', '75 مل', 'العناية الشخصية', 'سنان', 'لا', 'toothpaste.jpg'],
+        ['6', 'PROD005', 'أرز بسمتي', '5 كجم', 'أطعمة', 'أرز الذهب', 'نعم', 'basmati-rice.jpg']
+    ];
+    
+    return $template_data;
+}
+
+// تحميل قالب CSV
+if (isset($_GET['download_template'])) {
+    $template_data = generateTemplate();
+    
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=products_template.csv');
+    
+    $output = fopen('php://output', 'w');
+    // إضافة BOM للتعرف على الترميز UTF-8 في Excel
+    fputs($output, "\xEF\xBB\xBF");
+    
+    foreach ($template_data as $row) {
+        fputcsv($output, $row);
+    }
+    fclose($output);
+    exit();
+}
 
 // معالجة تصدير المنتجات
 if (isset($_POST['export_products'])) {
@@ -16,10 +47,22 @@ if (isset($_POST['export_products'])) {
     header('Content-Disposition: attachment; filename=products_' . date('Y-m-d') . '.csv');
     
     $output = fopen('php://output', 'w');
-    fputcsv($output, ['ID', 'Name', 'Description', 'Price', 'Category', 'Stock', 'Image Path']);
+    // إضافة BOM للتعرف على الترميز UTF-8 في Excel
+    fputs($output, "\xEF\xBB\xBF");
     
-    $stmt = $pdo->query("SELECT * FROM products");
+    // عناوين الأعمدة
+    fputcsv($output, ['S_NO', 'Item_Code', 'Item_Name', 'Packing', 'Item_Group', 'Brand', 'featured']);
+    
+    // جلب البيانات من قاعدة البيانات
+    $stmt = $pdo->query("
+        SELECT p.S_NO, p.Item_Code, p.Item_Name, p.Packing, p.Item_Group, p.Brand, p.featured 
+        FROM products p 
+        ORDER BY p.S_NO
+    ");
+    
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // تحويل featured إلى نعم/لا
+        $row['featured'] = $row['featured'] ? 'نعم' : 'لا';
         fputcsv($output, $row);
     }
     fclose($output);
@@ -32,39 +75,63 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
         $file = $_FILES['csv_file']['tmp_name'];
         $handle = fopen($file, 'r');
         
-        // تخطي الصف الأول (العناوين)
-        fgetcsv($handle);
-        
-        $imported = 0;
-        $errors = [];
-        
-        while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
-            if (count($data) >= 6) {
-                $name = $data[1] ?? '';
-                $description = $data[2] ?? '';
-                $price = floatval($data[3] ?? 0);
-                $category = $data[4] ?? '';
-                $stock = intval($data[5] ?? 0);
-                $image_path = $data[6] ?? '';
-                
-                if (!empty($name)) {
-                    try {
-                        $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category, stock_quantity, image_path) VALUES (?, ?, ?, ?, ?, ?)");
-                        $stmt->execute([$name, $description, $price, $category, $stock, $image_path]);
-                        $imported++;
-                    } catch (PDOException $e) {
-                        $errors[] = "خطأ في سطر: " . implode(',', $data);
+        if (!$handle) {
+            $error = "لا يمكن فتح الملف";
+        } else {
+            // تخطي الصف الأول (العناوين)
+            $headers = fgetcsv($handle);
+            
+            $imported = 0;
+            $updated = 0;
+            $errors = [];
+            
+            while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
+                if (count($data) >= 6) {
+                    $S_NO = trim($data[0] ?? '');
+                    $Item_Code = trim($data[1] ?? '');
+                    $Item_Name = trim($data[2] ?? '');
+                    $Packing = trim($data[3] ?? '');
+                    $Item_Group = trim($data[4] ?? '');
+                    $Brand = trim($data[5] ?? '');
+                    $featured = isset($data[6]) ? (strtolower(trim($data[6])) == 'نعم' || trim($data[6]) == '1' ? 1 : 0) : 0;
+                    
+                    if (!empty($Item_Code) && !empty($Item_Name)) {
+                        try {
+                            // التحقق من وجود المنتج مسبقاً
+                            $stmt = $pdo->prepare("SELECT id FROM products WHERE Item_Code = ?");
+                            $stmt->execute([$Item_Code]);
+                            $existing_product = $stmt->fetch(PDO::FETCH_ASSOC);
+                            
+                            if ($existing_product) {
+                                // تحديث المنتج الموجود
+                                $stmt = $pdo->prepare("UPDATE products SET S_NO = ?, Item_Name = ?, Packing = ?, Item_Group = ?, Brand = ?, featured = ? WHERE Item_Code = ?");
+                                $stmt->execute([$S_NO, $Item_Name, $Packing, $Item_Group, $Brand, $featured, $Item_Code]);
+                                $updated++;
+                            } else {
+                                // إضافة منتج جديد
+                                $stmt = $pdo->prepare("INSERT INTO products (S_NO, Item_Code, Item_Name, Packing, Item_Group, Brand, featured) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                                $stmt->execute([$S_NO, $Item_Code, $Item_Name, $Packing, $Item_Group, $Brand, $featured]);
+                                $imported++;
+                            }
+                        } catch (PDOException $e) {
+                            $errors[] = "خطأ في سطر: " . implode(',', $data) . " - " . $e->getMessage();
+                        }
+                    } else {
+                        $errors[] = "بيانات ناقصة في سطر: " . implode(',', $data);
                     }
                 }
             }
-        }
-        fclose($handle);
-        
-        if ($imported > 0) {
-            $success = "تم استيراد $imported منتج بنجاح";
-        }
-        if (!empty($errors)) {
-            $error = "حدثت أخطاء في بعض السجلات: " . implode(', ', $errors);
+            fclose($handle);
+            
+            if ($imported > 0 || $updated > 0) {
+                $success = "تم استيراد $imported منتج جديد وتحديث $updated منتج بنجاح";
+            }
+            if (!empty($errors)) {
+                $error = "حدثت أخطاء في بعض السجلات: " . implode('; ', array_slice($errors, 0, 5));
+                if (count($errors) > 5) {
+                    $error .= " ... والمزيد";
+                }
+            }
         }
     } else {
         $error = "حدث خطأ في رفع الملف";
@@ -257,6 +324,16 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
 
         .btn-success:hover {
             background: #38b2d6;
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e11568;
             color: white;
         }
 
@@ -544,7 +621,7 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                                 <ul style="text-align: right; margin-right: 1rem;">
                                     <li data-translate="export_info_1">سيتم تصدير جميع المنتجات</li>
                                     <li data-translate="export_info_2">التنسيق: CSV (UTF-8)</li>
-                                    <li data-translate="export_info_3">الحقول: الاسم، الوصف، السعر، الفئة، المخزون</li>
+                                    <li data-translate="export_info_3">الحقول: S_NO, Item_Code, Item_Name, Packing, Item_Group, Brand, featured</li>
                                 </ul>
                             </div>
                         </div>
@@ -579,7 +656,7 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                             <div class="info-box">
                                 <h5><i class="fas fa-download"></i> <span data-translate="csv_template">نموذج ملف CSV:</span></h5>
                                 <p style="text-align: center; margin: 1rem 0;">
-                                    <a href="sample_products.csv" class="btn btn-outline" style="padding: 0.5rem 1rem;">
+                                    <a href="?download_template=1" class="btn btn-warning" style="padding: 0.5rem 1rem;">
                                         <i class="fas fa-file-download"></i> <span data-translate="download_template">تحميل نموذج</span>
                                     </a>
                                 </p>
@@ -602,17 +679,17 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                             <ul style="text-align: right; margin-right: 1rem;">
                                 <li data-translate="req_1">يجب أن يكون الملف بصيغة CSV</li>
                                 <li data-translate="req_2">التشفير: UTF-8</li>
-                                <li data-translate="req_3">الفاصل: comma (,)</li>
+                                <li data-translate="req_3">الفاصل: comma (,) أو semicolon (;)</li>
                                 <li data-translate="req_4">الصف الأول يجب أن يحتوي على العناوين</li>
-                                <li data-translate="req_5">الحقول المطلوبة: الاسم، السعر، الفئة</li>
+                                <li data-translate="req_5">الحقول المطلوبة: Item_Code, Item_Name</li>
                             </ul>
                         </div>
                         <div class="col-6">
                             <h4><i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i> <span data-translate="notes">ملاحظات:</span></h4>
                             <ul style="text-align: right; margin-right: 1rem;">
-                                <li data-translate="note_1">المنتجات المكررة سيتم تجاهلها</li>
-                                <li data-translate="note_2">السعر يجب أن يكون رقماً</li>
-                                <li data-translate="note_3">الكمية في المخزن رقماً صحيحاً</li>
+                                <li data-translate="note_1">المنتجات المكررة سيتم تحديثها</li>
+                                <li data-translate="note_2">featured: نعم/لا أو 1/0</li>
+                                <li data-translate="note_3">S_NO يمكن أن يكون فارغاً</li>
                                 <li data-translate="note_4">احتفظ بنسخة احتياطية قبل الاستيراد</li>
                             </ul>
                         </div>
@@ -625,24 +702,33 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th data-translate="name">Name</th>
-                                        <th data-translate="description">Description</th>
-                                        <th data-translate="price">Price</th>
-                                        <th data-translate="category">Category</th>
-                                        <th data-translate="stock">Stock</th>
-                                        <th data-translate="image_path">Image Path</th>
+                                        <th>S_NO</th>
+                                        <th data-translate="item_code">Item_Code</th>
+                                        <th data-translate="item_name">Item_Name</th>
+                                        <th data-translate="packing">Packing</th>
+                                        <th data-translate="item_group">Item_Group</th>
+                                        <th data-translate="brand">Brand</th>
+                                        <th data-translate="featured">featured</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td data-translate="auto">(تلقائي)</td>
+                                        <td>1</td>
+                                        <td>PROD001</td>
                                         <td data-translate="sample_product">منتج مثال</td>
-                                        <td data-translate="sample_description">وصف المنتج</td>
-                                        <td>100.00</td>
-                                        <td data-translate="sample_category">فئة المثال</td>
-                                        <td>50</td>
-                                        <td>uploads/products/image.jpg</td>
+                                        <td>100 جرام</td>
+                                        <td data-translate="sample_category">حلويات</td>
+                                        <td data-translate="sample_brand">علامة تجارية</td>
+                                        <td>نعم</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>PROD002</td>
+                                        <td data-translate="sample_product2">منتج مثال 2</td>
+                                        <td>150 جرام</td>
+                                        <td data-translate="sample_category2">مخبوزات</td>
+                                        <td data-translate="sample_brand2">علامة تجارية 2</td>
+                                        <td>لا</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -662,20 +748,6 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
         // نصوص الترجمة
         const translations = {
             ar: {
-                    "dashboard": "لوحة التحكم الرئيسية",
-                                "welcome": "مرحباً،",
-                "home": "الرئيسية",
-                "user_management": "إدارة المستخدمين",
-                "product_management": "إدارة المنتجات",
-                "service_management": "إدارة الخدمات",
-                "order_management": "إدارة الطلبات",
-                "about_us": "من نحن",
-                "contact_info": "بيانات التواصل",
-                "settings": "الإعدادات",
-                "logout": "تسجيل الخروج",
-                "profile": "الملف الشخصي",
-
-                // العناوين الرئيسية
                 "import_export_products": "استيراد وتصدير المنتجات",
                 "import_export_desc": "إدارة نقل البيانات من وإلى النظام",
                 "export_products": "تصدير المنتجات",
@@ -689,7 +761,7 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                 "export_info": "معلومات التصدير:",
                 "export_info_1": "سيتم تصدير جميع المنتجات",
                 "export_info_2": "التنسيق: CSV (UTF-8)",
-                "export_info_3": "الحقول: الاسم، الوصف، السعر، الفئة، المخزون",
+                "export_info_3": "الحقول: S_NO, Item_Code, Item_Name, Packing, Item_Group, Brand, featured",
                 
                 // استيراد المنتجات
                 "upload_csv": "رفع ملف CSV",
@@ -703,42 +775,31 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                 "requirements": "المتطلبات:",
                 "req_1": "يجب أن يكون الملف بصيغة CSV",
                 "req_2": "التشفير: UTF-8",
-                "req_3": "الفاصل: comma (,)",
+                "req_3": "الفاصل: comma (,) أو semicolon (;)",
                 "req_4": "الصف الأول يجب أن يحتوي على العناوين",
-                "req_5": "الحقول المطلوبة: الاسم، السعر، الفئة",
+                "req_5": "الحقول المطلوبة: Item_Code, Item_Name",
                 
                 "notes": "ملاحظات:",
-                "note_1": "المنتجات المكررة سيتم تجاهلها",
-                "note_2": "السعر يجب أن يكون رقماً",
-                "note_3": "الكمية في المخزن رقماً صحيحاً",
+                "note_1": "المنتجات المكررة سيتم تحديثها",
+                "note_2": "featured: نعم/لا أو 1/0",
+                "note_3": "S_NO يمكن أن يكون فارغاً",
                 "note_4": "احتفظ بنسخة احتياطية قبل الاستيراد",
                 
                 "file_structure": "هيكل الملف المطلوب:",
-                "name": "Name",
-                "description": "Description",
-                "price": "Price",
-                "category": "Category",
-                "stock": "Stock",
-                "image_path": "Image Path",
-                "auto": "(تلقائي)",
+                "item_code": "Item_Code",
+                "item_name": "Item_Name",
+                "packing": "Packing",
+                "item_group": "Item_Group",
+                "brand": "Brand",
+                "featured": "featured",
                 "sample_product": "منتج مثال",
-                "sample_description": "وصف المنتج",
-                "sample_category": "فئة المثال"
+                "sample_product2": "منتج مثال 2",
+                "sample_category": "حلويات",
+                "sample_category2": "مخبوزات",
+                "sample_brand": "علامة تجارية",
+                "sample_brand2": "علامة تجارية 2"
             },
             en: {
-                  "dashboard": "Main Dashboard",
-                     "welcome": "Welcome,",
-                    "home": "Home",
-                    "user_management": "User Management",
-                    "product_management": "Product Management",
-                    "service_management": "Service Management",
-                    "order_management": "Order Management",
-                    "about_us": "About Us",
-                    "contact_info": "Contact Info",
-                    "settings": "Settings",
-                    "logout": "Logout",
-                    "profile": "Profile",
-                // العناوين الرئيسية
                 "import_export_products": "Import & Export Products",
                 "import_export_desc": "Manage data transfer to and from the system",
                 "export_products": "Export Products",
@@ -752,7 +813,7 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                 "export_info": "Export Information:",
                 "export_info_1": "All products will be exported",
                 "export_info_2": "Format: CSV (UTF-8)",
-                "export_info_3": "Fields: Name, Description, Price, Category, Stock",
+                "export_info_3": "Fields: S_NO, Item_Code, Item_Name, Packing, Item_Group, Brand, featured",
                 
                 // استيراد المنتجات
                 "upload_csv": "Upload CSV File",
@@ -766,27 +827,29 @@ if (isset($_POST['import_products']) && isset($_FILES['csv_file'])) {
                 "requirements": "Requirements:",
                 "req_1": "File must be in CSV format",
                 "req_2": "Encoding: UTF-8",
-                "req_3": "Separator: comma (,)",
+                "req_3": "Separator: comma (,) or semicolon (;)",
                 "req_4": "First row must contain headers",
-                "req_5": "Required fields: Name, Price, Category",
+                "req_5": "Required fields: Item_Code, Item_Name",
                 
                 "notes": "Notes:",
-                "note_1": "Duplicate products will be ignored",
-                "note_2": "Price must be a number",
-                "note_3": "Stock quantity must be an integer",
+                "note_1": "Duplicate products will be updated",
+                "note_2": "featured: yes/no or 1/0",
+                "note_3": "S_NO can be empty",
                 "note_4": "Keep a backup before importing",
                 
                 "file_structure": "Required File Structure:",
-                "name": "Name",
-                "description": "Description",
-                "price": "Price",
-                "category": "Category",
-                "stock": "Stock",
-                "image_path": "Image Path",
-                "auto": "(Auto)",
+                "item_code": "Item_Code",
+                "item_name": "Item_Name",
+                "packing": "Packing",
+                "item_group": "Item_Group",
+                "brand": "Brand",
+                "featured": "featured",
                 "sample_product": "Sample Product",
-                "sample_description": "Product Description",
-                "sample_category": "Sample Category"
+                "sample_product2": "Sample Product 2",
+                "sample_category": "Sweets",
+                "sample_category2": "Bakery",
+                "sample_brand": "Brand Name",
+                "sample_brand2": "Brand Name 2"
             }
         };
 

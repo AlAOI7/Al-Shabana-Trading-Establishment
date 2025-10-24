@@ -17,7 +17,8 @@ $sidebar_translations = [
         'contact_info' => 'بيانات التواصل',
         'import_export' => 'استيراد / تصدير البيانات', 
         'settings' => 'الإعدادات',
-        'logout' => 'تسجيل الخروج'
+        'logout' => 'تسجيل الخروج',
+        'faq' =>'إدارة الأسئلة الشائعة'
     ],
     'en' => [
         'dashboard' => 'Dashboard',
@@ -31,7 +32,8 @@ $sidebar_translations = [
         'contact_info' => 'Contact Info',
            'import_export' => 'Import / Export Data',
         'settings' => 'Settings',
-        'logout' => 'Logout'
+        'logout' => 'Logout',
+        'faq' => 'faq'
     ]
 ];
 
@@ -72,6 +74,10 @@ $menu_items = [
     'contact_info.php' => [
         'icon' => 'fas fa-address-book',
         'text_key' => 'contact_info'
+    ],
+     'faq_management.php' => [
+        'icon' => 'fas fa-question-circle',
+        'text_key' => 'faq'
     ],
     'settings.php' => [
         'icon' => 'fas fa-cogs',

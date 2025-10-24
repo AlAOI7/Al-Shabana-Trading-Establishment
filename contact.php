@@ -1692,8 +1692,6 @@ $lang_toggle_text = $current_lang == 'ar' ? 'EN' : 'AR';
       
     </div>
 </main>
-
-   <?php include 'footer.php'; ?>
    
      <script>
         // JavaScript للترجمة والوظائف التفاعلية
@@ -2098,3 +2096,4 @@ $lang_toggle_text = $current_lang == 'ar' ? 'EN' : 'AR';
             openGoogleMaps();
         }
     </script>
+   <?php include 'footer.php'; ?>

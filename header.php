@@ -17,6 +17,7 @@ $lang_toggle_text = $current_lang == 'ar' ? 'EN' : 'AR';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مؤسسة عبدالرحمن محمد الشبانات التجارية - الصفحة الرئيسية</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -270,18 +271,115 @@ $lang_toggle_text = $current_lang == 'ar' ? 'EN' : 'AR';
 
                     
                 </div>
-                 <?php if (isLoggedIn()): ?>
-                        <li><span style="color: #fff;">مرحباً، <?php echo $_SESSION['full_name']; ?></span></li>
-                        <?php if (isAdmin()): ?>
-                            <li><a href="admin/dashboard.php">لوحة التحكم</a></li>
-                        <?php else: ?>
-                            <li><a href="client/dashboard.php">حسابي</a></li>
-                        <?php endif; ?>
-                        <li><a href="logout.php">تسجيل الخروج</a></li>
-                    <?php else: ?>
-                        <li><a href="login.php">تسجيل الدخول</a></li>
-                        <li><a href="register.php">إنشاء حساب</a></li>
-                    <?php endif; ?>
+                <!-- أضف داخل <head> -->
+
+<style>
+        /* تصميم الأيقونة والقائمة */
+        .user-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-icon {
+            cursor: pointer;
+            color: #fff;
+            font-size: 22px;
+            background-color: #007bff;
+            border-radius: 50%;
+            padding: 10px 12px;
+            transition: background 0.3s;
+            z-index: 99999;
+            position: relative;
+        }
+        .user-icon:hover {
+            background-color: #0056b3;
+        }
+
+        /* القائمة المنسدلة */
+        .dropdown-menu {
+            display: none;
+            position: fixed; /* ثابتة فوق كل الصفحة */
+            top: 60px; /* المسافة من أعلى الصفحة */
+            right: 20px; /* تبتعد قليلاً عن اليمين */
+            background-color: #fff;
+            min-width: 180px;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            z-index: 999999; /* فوق كل العناصر */
+            overflow: hidden;
+        }
+
+        .dropdown-menu a,
+        .dropdown-menu span {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background 0.2s;
+            font-size: 15px;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .dropdown-menu span {
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+
+        /* سهم صغير فوق القائمة */
+        .dropdown-menu::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            right: 25px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent #fff transparent;
+        }
+</style>
+
+<!-- HTML + PHP -->
+<li class="user-menu">
+    <i class="fas fa-user user-icon" id="userIcon"></i>
+
+    <div class="dropdown-menu" id="userDropdown">
+        <?php if (isLoggedIn()): ?>
+            <span>مرحباً، <?php echo htmlspecialchars($_SESSION['full_name']); ?></span>
+            <?php if (isAdmin()): ?>
+                <a href="admin/dashboard.php">لوحة التحكم</a>
+            <?php else: ?>
+                <a href="client/dashboard.php">حسابي</a>
+            <?php endif; ?>
+            <a href="logout.php">تسجيل الخروج</a>
+        <?php else: ?>
+            <a href="login.php">تسجيل الدخول</a>
+            <a href="register.php">إنشاء حساب</a>
+        <?php endif; ?>
+    </div>
+</li>
+
+<!-- جافاسكريبت لإظهار/إخفاء القائمة عند النقر -->
+<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const icon = document.getElementById("userIcon");
+            const dropdown = document.getElementById("userDropdown");
+
+            icon.addEventListener("click", function(e) {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+            });
+
+            // إغلاق القائمة عند النقر خارجها
+            document.addEventListener("click", function(e) {
+                if (!dropdown.contains(e.target) && e.target !== icon) {
+                    dropdown.style.display = "none";
+                }
+            });
+        });
+</script>
+
                 <div class="top-bar-actions">
                   <button id="languageToggle" class="lang-btn">
                         <i class="fas fa-globe"></i>

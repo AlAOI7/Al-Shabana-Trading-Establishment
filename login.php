@@ -599,7 +599,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="auth-card">
             <div class="auth-header">
                 <div class="logo">
-                    <div class="logo-text">نظام الشعبانات</div>
+                    <div class="logo-text">نظام الشبانات</div>
                 </div>
                 <h1><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h1>
                 <p>مرحباً بعودتك! يرجى تسجيل الدخول إلى حسابك</p>
@@ -667,7 +667,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p><a href="forgot-password.php">نسيت كلمة المرور؟</a></p>
                 </div>
                 
-                <div class="demo-accounts">
+                <!-- <div class="demo-accounts">
                     <h4><i class="fas fa-info-circle"></i> حسابات تجريبية</h4>
                     <div class="account-list">
                         <div class="account-item">
@@ -679,7 +679,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="account-credentials">user1 / user123</span>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>

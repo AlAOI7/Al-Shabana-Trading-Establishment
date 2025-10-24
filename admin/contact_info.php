@@ -1,4 +1,4 @@
-<?php 
+<?php
 require_once '../config.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
@@ -6,31 +6,53 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
     exit();
 }
 
-// جلب بيانات التواصل
-$stmt = $pdo->query("SELECT * FROM contact_info LIMIT 1");
-$contact_info = $stmt->fetch();
+// جلب بيانات الاتصال
+try {
+    $stmt = $pdo->query("SELECT * FROM contact_info LIMIT 1");
+    $contact_info = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$contact_info) {
+        // إنشاء سجل افتراضي إذا لم يوجد
+        $stmt = $pdo->prepare("INSERT INTO contact_info (id) VALUES (1)");
+        $stmt->execute();
+        $contact_info = ['id' => 1];
+    }
+} catch (PDOException $e) {
+    $error = "خطأ في جلب بيانات الاتصال: " . $e->getMessage();
+}
 
 // معالجة تحديث البيانات
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_contact'])) {
-    $address = $_POST['address'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $social_facebook = $_POST['social_facebook'];
-    $social_twitter = $_POST['social_twitter'];
-    $social_instagram = $_POST['social_instagram'];
-    
-    if ($contact_info) {
-        // تحديث البيانات الموجودة
-        $stmt = $pdo->prepare("UPDATE contact_info SET address = ?, phone = ?, email = ?, social_facebook = ?, social_twitter = ?, social_instagram = ? WHERE id = ?");
-        $stmt->execute([$address, $phone, $email, $social_facebook, $social_twitter, $social_instagram, $contact_info['id']]);
-    } else {
-        // إضافة بيانات جديدة
-        $stmt = $pdo->prepare("INSERT INTO contact_info (address, phone, email, social_facebook, social_twitter, social_instagram) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$address, $phone, $email, $social_facebook, $social_twitter, $social_instagram]);
+    try {
+        $stmt = $pdo->prepare("UPDATE contact_info SET 
+            address = ?, address_en = ?, phone = ?, email = ?, 
+            working_hours_ar = ?, working_hours_en = ?,
+            social_facebook = ?, social_twitter = ?, 
+            social_instagram = ?, social_whatsapp = ?
+            WHERE id = ?");
+        
+        $stmt->execute([
+            $_POST['address_ar'],
+            $_POST['address_en'],
+            $_POST['phone'],
+            $_POST['email'],
+            $_POST['working_hours_ar'],
+            $_POST['working_hours_en'],
+            $_POST['social_facebook'],
+            $_POST['social_twitter'],
+            $_POST['social_instagram'],
+            $_POST['social_whatsapp'],
+            $contact_info['id']
+        ]);
+        
+        $success = "تم تحديث بيانات الاتصال بنجاح";
+        // إعادة جلب البيانات المحدثة
+        $stmt = $pdo->query("SELECT * FROM contact_info LIMIT 1");
+        $contact_info = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+    } catch (PDOException $e) {
+        $error = "خطأ في تحديث البيانات: " . $e->getMessage();
     }
-    
-    header("Location: contact_info.php?success=updated");
-    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -415,317 +437,146 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_contact'])) {
 </head>
 <body>
     <div class="dashboard">
-           <?php include 'sidebar.php'; ?>
+        <?php include 'sidebar.php'; ?>
         
-        <!-- المحتوى الرئيسي -->
         <main class="main-content">
             <?php include 'admin_navbar.php'; ?>
-            <div class="header">
-                <h1><i class="fas fa-address-book"></i> <span data-translate="contact_info_management">إدارة بيانات التواصل</span></h1>
-                <p data-translate="contact_info_desc">تحديث معلومات التواصل والروابط الاجتماعية</p>
-            </div>
+            
+            <div class="contact-management">
+                <div class="header">
+                    <h1><i class="fas fa-address-book"></i> إدارة معلومات الاتصال</h1>
+                    <p>تعديل معلومات الاتصال ووسائل التواصل الاجتماعي</p>
+                </div>
 
-            <?php if (isset($_GET['success'])): ?>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> 
-                    <span data-translate="contact_info_updated">تم تحديث بيانات التواصل بنجاح</span>
-                </div>
-            <?php endif; ?>
+                <?php if (isset($success)): ?>
+                    <div class="alert alert-success"><?php echo $success; ?></div>
+                <?php endif; ?>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-edit"></i> <span data-translate="contact_information">معلومات التواصل</span></h3>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label for="address">
-                                        <i class="fas fa-map-marker-alt"></i> 
-                                        <span data-translate="address">العنوان</span>
-                                    </label>
-                                    <textarea class="form-control" id="address" name="address" rows="3" 
-                                              placeholder="أدخل العنوان الكامل"><?php echo $contact_info ? htmlspecialchars($contact_info['address']) : ''; ?></textarea>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label for="phone">
-                                        <i class="fas fa-phone"></i> 
-                                        <span data-translate="phone">رقم الهاتف</span>
-                                    </label>
-                                    <input type="text" class="form-control" id="phone" name="phone" 
-                                           value="<?php echo $contact_info ? htmlspecialchars($contact_info['phone']) : ''; ?>" 
-                                           placeholder="أدخل رقم الهاتف">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label for="email">
-                                        <i class="fas fa-envelope"></i> 
-                                        <span data-translate="email">البريد الإلكتروني</span>
-                                    </label>
-                                    <input type="email" class="form-control" id="email" name="email" 
-                                           value="<?php echo $contact_info ? htmlspecialchars($contact_info['email']) : ''; ?>" 
-                                           placeholder="أدخل البريد الإلكتروني">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr>
-                        
-                        <h4><i class="fas fa-share-alt"></i> <span data-translate="social_links">الروابط الاجتماعية</span></h4>
-                        
-                        <div class="row">
-                            <div class="col-4">
-                                <div class="form-group">
-                                    <label for="social_facebook" class="facebook">
-                                        <i class="fab fa-facebook"></i> 
-                                        <span data-translate="facebook">فيسبوك</span>
-                                    </label>
-                                    <input type="url" class="form-control" id="social_facebook" name="social_facebook" 
-                                           value="<?php echo $contact_info ? htmlspecialchars($contact_info['social_facebook']) : ''; ?>" 
-                                           placeholder="رابط الصفحة على فيسبوك">
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="form-group">
-                                    <label for="social_twitter" class="twitter">
-                                        <i class="fab fa-twitter"></i> 
-                                        <span data-translate="twitter">تويتر</span>
-                                    </label>
-                                    <input type="url" class="form-control" id="social_twitter" name="social_twitter" 
-                                           value="<?php echo $contact_info ? htmlspecialchars($contact_info['social_twitter']) : ''; ?>" 
-                                           placeholder="رابط الحساب على تويتر">
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="form-group">
-                                    <label for="social_instagram" class="instagram">
-                                        <i class="fab fa-instagram"></i> 
-                                        <span data-translate="instagram">إنستجرام</span>
-                                    </label>
-                                    <input type="url" class="form-control" id="social_instagram" name="social_instagram" 
-                                           value="<?php echo $contact_info ? htmlspecialchars($contact_info['social_instagram']) : ''; ?>" 
-                                           placeholder="رابط الحساب على إنستجرام">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" name="update_contact" class="btn btn-primary">
-                            <i class="fas fa-save"></i> 
-                            <span data-translate="save_data">حفظ البيانات</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
+                <?php if (isset($error)): ?>
+                    <div class="alert alert-danger"><?php echo $error; ?></div>
+                <?php endif; ?>
 
-            <!-- معاينة بيانات التواصل -->
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-eye"></i> <span data-translate="contact_preview">معاينة بيانات التواصل</span></h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <h4 data-translate="contact_info">معلومات الاتصال</h4>
-                            <div class="preview-box">
-                                <?php if ($contact_info): ?>
-                                    <p><strong><i class="fas fa-map-marker-alt"></i> <span data-translate="address">العنوان</span>:</strong><br>
-                                    <?php echo $contact_info['address'] ? nl2br(htmlspecialchars($contact_info['address'])) : '<span style="color: #999;" data-translate="not_specified">غير محدد</span>'; ?></p>
-                                    
-                                    <p><strong><i class="fas fa-phone"></i> <span data-translate="phone">الهاتف</span>:</strong><br>
-                                    <?php echo $contact_info['phone'] ?: '<span style="color: #999;" data-translate="not_specified">غير محدد</span>'; ?></p>
-                                    
-                                    <p><strong><i class="fas fa-envelope"></i> <span data-translate="email">البريد الإلكتروني</span>:</strong><br>
-                                    <?php echo $contact_info['email'] ?: '<span style="color: #999;" data-translate="not_specified">غير محدد</span>'; ?></p>
-                                <?php else: ?>
-                                    <p style="color: #999; text-align: center;" data-translate="no_data">لا توجد بيانات لعرضها</p>
-                                <?php endif; ?>
-                            </div>
+                <form method="POST">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-map-marker-alt"></i> معلومات العنوان</h3>
                         </div>
-                        
-                        <div class="col-6">
-                            <h4 data-translate="social_media">وسائل التواصل الاجتماعي</h4>
-                            <div class="preview-box" style="text-align: center;">
-                                <?php if ($contact_info && ($contact_info['social_facebook'] || $contact_info['social_twitter'] || $contact_info['social_instagram'])): ?>
-                                    <div class="social-links">
-                                        <?php if ($contact_info['social_facebook']): ?>
-                                            <a href="<?php echo $contact_info['social_facebook']; ?>" target="_blank" class="facebook">
-                                                <i class="fab fa-facebook"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                        <?php if ($contact_info['social_twitter']): ?>
-                                            <a href="<?php echo $contact_info['social_twitter']; ?>" target="_blank" class="twitter">
-                                                <i class="fab fa-twitter"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                        <?php if ($contact_info['social_instagram']): ?>
-                                            <a href="<?php echo $contact_info['social_instagram']; ?>" target="_blank" class="instagram">
-                                                <i class="fab fa-instagram"></i>
-                                            </a>
-                                        <?php endif; ?>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="address_ar">العنوان (عربي)</label>
+                                        <textarea class="form-control" id="address_ar" name="address_ar" rows="3"><?php echo htmlspecialchars($contact_info['address'] ?? ''); ?></textarea>
+                                        <small>استخدم Enter لفصل الأسطر</small>
                                     </div>
-                                    <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;" data-translate="click_icons">
-                                        انقر على الأيقونات لزيارة الصفحات
-                                    </p>
-                                <?php else: ?>
-                                    <p style="color: #999;" data-translate="no_social_links">لا توجد روابط اجتماعية مضافة</p>
-                                <?php endif; ?>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="address_en">العنوان (إنجليزي)</label>
+                                        <textarea class="form-control" id="address_en" name="address_en" rows="3"><?php echo htmlspecialchars($contact_info['address_en'] ?? ''); ?></textarea>
+                                        <small>Use Enter to separate lines</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-phone"></i> معلومات الاتصال</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="phone">رقم الهاتف</label>
+                                        <input type="text" class="form-control" id="phone" name="phone" 
+                                               value="<?php echo htmlspecialchars($contact_info['phone'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="email">البريد الإلكتروني</label>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               value="<?php echo htmlspecialchars($contact_info['email'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock"></i> أوقات العمل</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="working_hours_ar">أوقات العمل (عربي)</label>
+                                        <textarea class="form-control" id="working_hours_ar" name="working_hours_ar" rows="2"><?php echo htmlspecialchars($contact_info['working_hours_ar'] ?? ''); ?></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="working_hours_en">أوقات العمل (إنجليزي)</label>
+                                        <textarea class="form-control" id="working_hours_en" name="working_hours_en" rows="2"><?php echo htmlspecialchars($contact_info['working_hours_en'] ?? ''); ?></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-share-alt"></i> وسائل التواصل الاجتماعي</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="social_facebook">فيسبوك (رابط)</label>
+                                        <input type="url" class="form-control" id="social_facebook" name="social_facebook" 
+                                               value="<?php echo htmlspecialchars($contact_info['social_facebook'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="social_twitter">تويتر (رابط)</label>
+                                        <input type="url" class="form-control" id="social_twitter" name="social_twitter" 
+                                               value="<?php echo htmlspecialchars($contact_info['social_twitter'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="social_instagram">انستغرام (رابط)</label>
+                                        <input type="url" class="form-control" id="social_instagram" name="social_instagram" 
+                                               value="<?php echo htmlspecialchars($contact_info['social_instagram'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-group">
+                                        <label for="social_whatsapp">واتساب (رابط)</label>
+                                        <input type="url" class="form-control" id="social_whatsapp" name="social_whatsapp" 
+                                               value="<?php echo htmlspecialchars($contact_info['social_whatsapp'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <button type="submit" name="update_contact" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> حفظ التغييرات
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </main>
     </div>
-
-    <!-- زر الترجمة العائم -->
-    <button class="translate-btn" id="translateBtn">
-        <i class="fas fa-language"></i>
-    </button>
-
-    <script>
-        // نصوص الترجمة
-        const translations = {
-            ar: {
-                    "dashboard": "لوحة التحكم الرئيسية",
-                                "welcome": "مرحباً،",
-                "home": "الرئيسية",
-                "user_management": "إدارة المستخدمين",
-                "product_management": "إدارة المنتجات",
-                "service_management": "إدارة الخدمات",
-                "order_management": "إدارة الطلبات",
-                "about_us": "من نحن",
-                "contact_info": "بيانات التواصل",
-                "settings": "الإعدادات",
-                "logout": "تسجيل الخروج",
-                "profile": "الملف الشخصي",
-
-                // العناوين الرئيسية
-                "contact_info_management": "بيانات التواصل - الإدارة",
-                "contact_info_desc": "تحديث معلومات التواصل والروابط الاجتماعية",
-                "contact_information": "معلومات التواصل",
-                "contact_preview": "معاينة بيانات التواصل",
-                
-                // نماذج البيانات
-                "address": "العنوان",
-                "phone": "رقم الهاتف",
-                "email": "البريد الإلكتروني",
-                "social_links": "الروابط الاجتماعية",
-                "facebook": "فيسبوك",
-                "twitter": "تويتر",
-                "instagram": "إنستجرام",
-                
-                // معاينة البيانات
-                "contact_info": "معلومات الاتصال",
-                "social_media": "وسائل التواصل الاجتماعي",
-                "not_specified": "غير محدد",
-                "no_data": "لا توجد بيانات لعرضها",
-                "no_social_links": "لا توجد روابط اجتماعية مضافة",
-                "click_icons": "انقر على الأيقونات لزيارة الصفحات",
-                
-                // أزرار
-                "save_data": "حفظ البيانات",
-                
-                // رسائل النجاح
-                "contact_info_updated": "تم تحديث بيانات التواصل بنجاح"
-            },
-            en: {
-                 "dashboard": "Main Dashboard",
-                     "welcome": "Welcome,",
-                    "home": "Home",
-                    "user_management": "User Management",
-                    "product_management": "Product Management",
-                    "service_management": "Service Management",
-                    "order_management": "Order Management",
-                    "about_us": "About Us",
-                    "contact_info": "Contact Info",
-                    "settings": "Settings",
-                    "logout": "Logout",
-                    "profile": "Profile",
-                // العناوين الرئيسية
-                "contact_info_management": "Contact Information - Admin",
-                "contact_info_desc": "Update contact information and social links",
-                "contact_information": "Contact Information",
-                "contact_preview": "Contact Information Preview",
-                
-                // نماذج البيانات
-                "address": "Address",
-                "phone": "Phone Number",
-                "email": "Email",
-                "social_links": "Social Links",
-                "facebook": "Facebook",
-                "twitter": "Twitter",
-                "instagram": "Instagram",
-                
-                // معاينة البيانات
-                "contact_info": "Contact Information",
-                "social_media": "Social Media",
-                "not_specified": "Not Specified",
-                "no_data": "No data to display",
-                "no_social_links": "No social links added",
-                "click_icons": "Click on icons to visit pages",
-                
-                // أزرار
-                "save_data": "Save Data",
-                
-                // رسائل النجاح
-                "contact_info_updated": "Contact information updated successfully"
-            }
-        };
-
-        // حالة اللغة الحالية
-        let currentLang = localStorage.getItem('language') || 'ar';
-
-        // دالة لتطبيق الترجمة
-        function applyLanguage(lang) {
-            // تحديث النصوص في الصفحة
-            document.querySelectorAll('[data-translate]').forEach(element => {
-                const key = element.getAttribute('data-translate');
-                if (translations[lang][key]) {
-                    element.textContent = translations[lang][key];
-                }
-            });
-
-            // تحديث النصوص في العناصر الأخرى
-            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(element => {
-                const placeholder = element.getAttribute('placeholder');
-                if (placeholder && translations[lang][placeholder]) {
-                    element.setAttribute('placeholder', translations[lang][placeholder]);
-                }
-            });
-
-            // تحديث اتجاه الصفحة
-            if (lang === 'ar') {
-                document.documentElement.dir = 'rtl';
-                document.documentElement.lang = 'ar';
-                document.title = 'بيانات التواصل - الإدارة';
-            } else {
-                document.documentElement.dir = 'ltr';
-                document.documentElement.lang = 'en';
-                document.title = 'Contact Information - Admin';
-            }
-
-            // حفظ اللغة في localStorage
-            localStorage.setItem('language', lang);
-            currentLang = lang;
-        }
-
-        // حدث النقر على زر الترجمة
-        document.getElementById('translateBtn').addEventListener('click', function() {
-            const newLang = currentLang === 'ar' ? 'en' : 'ar';
-            applyLanguage(newLang);
-        });
-
-        // تطبيق اللغة عند تحميل الصفحة
-        document.addEventListener('DOMContentLoaded', function() {
-            applyLanguage(currentLang);
-        });
-    </script>
 </body>
 </html>
