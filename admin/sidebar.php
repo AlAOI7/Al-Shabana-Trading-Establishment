@@ -16,6 +16,8 @@ $sidebar_translations = [
         'about_us' => 'من نحن',
         'contact_info' => 'بيانات التواصل',
         'import_export' => 'استيراد / تصدير البيانات', 
+                'import' => 'استيراد  ', 
+
         'settings' => 'الإعدادات',
         'logout' => 'تسجيل الخروج',
         'faq' =>'إدارة الأسئلة الشائعة'
@@ -31,6 +33,7 @@ $sidebar_translations = [
         'about_us' => 'About Us',
         'contact_info' => 'Contact Info',
            'import_export' => 'Import / Export Data',
+                      'import' => 'Import ',
         'settings' => 'Settings',
         'logout' => 'Logout',
         'faq' => 'faq'
@@ -69,6 +72,11 @@ $menu_items = [
         'import_export.php' => [
         'icon' => 'fas fa-file-import',
         'text_key' => 'import_export'
+    ],
+
+        'import.php' => [
+        'icon' => 'fas fa-file-import',
+        'text_key' => 'import'
     ],
 
     'contact_info.php' => [

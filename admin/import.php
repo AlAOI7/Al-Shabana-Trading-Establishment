@@ -54,11 +54,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_excel'])) {
     importFromCSV($pdo);
 }
 
-// دالة رفع الصور المسبق
+// دالة رفع الصور المسبق - معدلة
 function uploadImagesBeforeImport($pdo) {
     $uploadDir = '../uploads/products/';
+    $tempDir = '../uploads/temp_uploads/';
+    
+    // إنشاء المجلدات إذا لم تكن موجودة
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
+    }
+    if (!is_dir($tempDir)) {
+        mkdir($tempDir, 0777, true);
     }
     
     $uploaded_files = [];
@@ -75,12 +81,13 @@ function uploadImagesBeforeImport($pdo) {
                     continue;
                 }
                 
-                // إنشاء اسم فريد للملف
-                $file_name = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $original_name);
-                $file_path = $uploadDir . $file_name;
+                // إنشاء اسم فريد للملف (بدون uniqid للحفاظ على الاسم الأصلي)
+                $file_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $original_name);
+                $file_path = $tempDir . $file_name;
                 
                 if (move_uploaded_file($tmp_name, $file_path)) {
                     $uploaded_files[] = $file_name;
+                    error_log("تم رفع الصورة: $file_name إلى المجلد المؤقت");
                 }
             }
         }
@@ -103,6 +110,9 @@ function uploadImagesBeforeImport($pdo) {
 
 // دالة استيراد من CSV مع مطابقة الصور
 function importFromCSV($pdo) {
+    // تسجيل للمتابعة
+    error_log("بدء استيراد CSV - عدد الصور المرفوعة مسبقاً: " . count($_SESSION['uploaded_images'] ?? []));
+    
     if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] != 0) {
         $_SESSION['message'] = "يرجى اختيار ملف CSV صحيح";
         $_SESSION['message_type'] = 'error';
@@ -112,8 +122,13 @@ function importFromCSV($pdo) {
     
     $uploadDir = '../uploads/products/';
     $tempDir = '../uploads/temp_uploads/';
+    
+    // إنشاء المجلدات إذا لم تكن موجودة
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
+    }
+    if (!is_dir($tempDir)) {
+        mkdir($tempDir, 0777, true);
     }
     
     $file_name = $_FILES['csv_file']['name'];
@@ -141,6 +156,7 @@ function importFromCSV($pdo) {
         $imported = 0;
         $updated = 0;
         $errors = 0;
+        $images_added = 0;
         $uploaded_images = $_SESSION['uploaded_images'] ?? [];
         
         // تخطي الصف الأول (العناوين)
@@ -158,6 +174,7 @@ function importFromCSV($pdo) {
             
             // إذا كان عدد الأعمدة أقل من 7، تخطى هذا السطر
             if (count($row) < 7) {
+                error_log("سطر $line_number: عدد الأعمدة غير كافي - " . count($row) . " أعمدة");
                 $errors++;
                 continue;
             }
@@ -174,6 +191,7 @@ function importFromCSV($pdo) {
             
             // التحقق من البيانات الأساسية
             if (empty($Item_Code) || empty($Item_Name)) {
+                error_log("سطر $line_number: بيانات غير كافية - كود المنتج أو الاسم فارغ");
                 $errors++;
                 continue;
             }
@@ -190,22 +208,32 @@ function importFromCSV($pdo) {
                     $stmt->execute([$S_NO, $Item_Name, $Packing, $Item_Group, $Brand, $featured, $existing_product['id']]);
                     $product_id = $existing_product['id'];
                     $updated++;
+                    error_log("تم تحديث المنتج: $Item_Code - ID: $product_id");
                 } else {
                     // إضافة منتج جديد
                     $stmt = $pdo->prepare("INSERT INTO products (S_NO, Item_Code, Item_Name, Packing, Item_Group, Brand, featured) VALUES (?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([$S_NO, $Item_Code, $Item_Name, $Packing, $Item_Group, $Brand, $featured]);
                     $product_id = $pdo->lastInsertId();
                     $imported++;
+                    error_log("تم إضافة المنتج: $Item_Code - ID: $product_id");
                 }
                 
                 // معالجة الصور إذا كان هناك اسم صورة
                 if (!empty($image_name)) {
-                    processProductImage($pdo, $product_id, $image_name, $tempDir, $uploadDir);
+                    $image_result = processProductImage($pdo, $product_id, $image_name, $tempDir, $uploadDir);
+                    if ($image_result) {
+                        $images_added++;
+                        error_log("تم معالجة الصورة: $image_name للمنتج: $product_id");
+                    } else {
+                        error_log("فشل في معالجة الصورة: $image_name للمنتج: $product_id");
+                    }
+                } else {
+                    error_log("لا توجد صورة للمنتج: $Item_Code");
                 }
                 
             } catch (PDOException $e) {
+                error_log("خطأ في قاعدة البيانات - سطر $line_number: " . $e->getMessage());
                 $errors++;
-                error_log("خطأ في سطر $line_number: " . $e->getMessage());
             }
         }
         
@@ -217,6 +245,7 @@ function importFromCSV($pdo) {
         }
         
         $message = "تم استيراد $imported منتج جديد وتحديث $updated منتج بنجاح!";
+        $message .= " تم إضافة $images_added صورة.";
         if ($errors > 0) {
             $message .= " ($errors خطأ)";
         }
@@ -233,26 +262,77 @@ function importFromCSV($pdo) {
     exit();
 }
 
-// دالة معالجة صور المنتج
+// دالة معالجة صور المنتج - محسنة بشكل كبير
 function processProductImage($pdo, $product_id, $image_name, $tempDir, $uploadDir) {
-    // البحث عن الصورة في المجلد المؤقت
+    // تنظيف اسم الصورة من المسارات إذا وجدت
+    $clean_image_name = basename(trim($image_name));
+    
+    error_log("بدء معالجة الصورة: '$clean_image_name' للمنتج: $product_id");
+    
+    // الحصول على جميع الملفات في المجلد المؤقت
     $temp_files = glob($tempDir . '*');
     $found_image = null;
     
+    error_log("البحث في " . count($temp_files) . " ملف في المجلد المؤقت");
+    
+    // طرق مختلفة لمطابقة الصور
+    $matching_methods = [
+        'مطابقة تامة' => $clean_image_name,
+        'مطابقة بدون مسافات' => str_replace(' ', '', $clean_image_name),
+        'مطابقة اسم الملف الأساسي' => pathinfo($clean_image_name, PATHINFO_FILENAME)
+    ];
+    
     foreach ($temp_files as $temp_file) {
-        if (strpos(basename($temp_file), $image_name) !== false) {
+        $temp_filename = basename($temp_file);
+        
+        error_log("مقارنة مع: $temp_filename");
+        
+        // طريقة 1: مطابقة تامة
+        if ($temp_filename === $clean_image_name) {
             $found_image = $temp_file;
+            error_log("تم العثور على الصورة بالمطابقة التامة: $temp_filename");
+            break;
+        }
+        
+        // طريقة 2: مطابقة بدون أحرف خاصة
+        $clean_temp_name = preg_replace('/[^a-zA-Z0-9.]/', '', $temp_filename);
+        $clean_search_name = preg_replace('/[^a-zA-Z0-9.]/', '', $clean_image_name);
+        
+        if ($clean_temp_name === $clean_search_name) {
+            $found_image = $temp_file;
+            error_log("تم العثور على الصورة بعد تنظيف الأحخاص الخاصة: $temp_filename");
+            break;
+        }
+        
+        // طريقة 3: مطابقة الجزء الأساسي من الاسم (بدون الامتداد)
+        $temp_base = pathinfo($temp_filename, PATHINFO_FILENAME);
+        $search_base = pathinfo($clean_image_name, PATHINFO_FILENAME);
+        
+        if ($temp_base === $search_base) {
+            $found_image = $temp_file;
+            error_log("تم العثور على الصورة بمطابقة الاسم الأساسي: $temp_filename");
+            break;
+        }
+        
+        // طريقة 4: مطابقة جزئية
+        if (strpos($temp_filename, $search_base) !== false) {
+            $found_image = $temp_file;
+            error_log("تم العثور على الصورة بالمطابقة الجزئية: $temp_filename");
             break;
         }
     }
     
     if ($found_image && file_exists($found_image)) {
+        error_log("تم العثور على الصورة: " . basename($found_image));
+        
         $file_extension = strtolower(pathinfo($found_image, PATHINFO_EXTENSION));
-        $new_filename = uniqid() . '_' . $image_name;
+        $new_filename = uniqid() . '_' . $clean_image_name;
         $final_image_path = $uploadDir . $new_filename;
         
         // نسخ الصورة إلى المجلد النهائي
         if (copy($found_image, $final_image_path)) {
+            error_log("تم نسخ الصورة إلى: $final_image_path");
+            
             // التحقق من عدم وجود الصورة مسبقاً
             $stmt = $pdo->prepare("SELECT id FROM product_images WHERE product_id = ? AND image_name = ?");
             $stmt->execute([$product_id, $new_filename]);
@@ -266,28 +346,47 @@ function processProductImage($pdo, $product_id, $image_name, $tempDir, $uploadDi
                 
                 $stmt = $pdo->prepare("INSERT INTO product_images (product_id, image_name, is_primary) VALUES (?, ?, ?)");
                 if ($stmt->execute([$product_id, $new_filename, $is_primary])) {
-                    // حذف الصورة من المجلد المؤقت بعد نسخها بنجاح
-                    unlink($found_image);
+                    error_log("تم إضافة الصورة إلى قاعدة البيانات: $new_filename للمنتج: $product_id");
+                    
+                    // لا تحذف الصورة من المجلد المؤقت فوراً (قد تحتاجها منتجات أخرى)
+                    // سيتم تنظيفها لاحقاً بواسطة cleanupTempDirectory
                     return true;
+                } else {
+                    error_log("فشل في إضافة الصورة إلى قاعدة البيانات");
+                    return false;
                 }
+            } else {
+                error_log("الصورة موجودة مسبقاً في قاعدة البيانات");
+                return true;
             }
+        } else {
+            error_log("فشل في نسخ الصورة من $found_image إلى $final_image_path");
+            return false;
         }
+    } else {
+        error_log("لم يتم العثور على الصورة: '$clean_image_name' في المجلد المؤقت");
+        error_log("الملفات المتاحة: " . implode(', ', array_map('basename', $temp_files)));
+        return false;
     }
-    return false;
 }
 
 // دالة تنظيف المجلد المؤقت
 function cleanupTempDirectory($tempDir) {
     if (is_dir($tempDir)) {
         $files = glob($tempDir . '*');
+        $deleted_count = 0;
         foreach ($files as $file) {
             if (is_file($file)) {
                 // حذف الملفات القديمة (أكثر من ساعة)
                 if (time() - filemtime($file) > 3600) {
-                    unlink($file);
+                    if (unlink($file)) {
+                        $deleted_count++;
+                        error_log("تم حذف الملف المؤقت: " . basename($file));
+                    }
                 }
             }
         }
+        error_log("تم حذف $deleted_count ملف مؤقت");
     }
 }
 ?>
