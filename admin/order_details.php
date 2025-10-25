@@ -36,7 +36,7 @@ $stmt = $pdo->prepare("
     LEFT JOIN products p ON oi.product_id = p.id 
     WHERE oi.order_id = ?
 ");
-$stmt->execute([$order_id]);
+
 $order_items = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -489,7 +489,7 @@ $order_items = $stmt->fetchAll();
                                     <?php echo strtoupper(substr($order['full_name'] ?: $order['username'], 0, 1)); ?>
                                 </div>
                                 <div>
-                                    <h4 style="margin: 0;"><?php echo htmlspecialchars($order['full_name'] ?: $order['username']); ?></h4>
+                                    <!-- <h4 style="margin: 0;"><?php echo htmlspecialchars($order['full_name'] ?: $order['username']); ?></h4> -->
                                     <p style="margin: 0; color: #666;">@<?php echo $order['username']; ?></p>
                                 </div>
                             </div>

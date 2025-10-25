@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
 // دالة إنشاء قالب CSV منظم
 function generateTemplate() {
     $template_data = [
-        // العناوين الرئيسية (يجب أن تكون باللغة الإنجليزية فقط)
+        // العناوين الرئيسية
         ['S_NO', 'Item_Code', 'Item_Name', 'Packing', 'Item_Group', 'Brand', 'Featured', 'Image_Name'],
         
         // أمثلة توضيحية للبيانات
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['import_excel'])) {
 
 // دالة رفع الصور المسبق
 function uploadImagesBeforeImport($pdo) {
-    $uploadDir = '../uploads/temp_uploads/';
+    $uploadDir = '../uploads/products/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
@@ -75,8 +75,8 @@ function uploadImagesBeforeImport($pdo) {
                     continue;
                 }
                 
-                // تنظيف اسم الملف
-                $file_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $original_name);
+                // إنشاء اسم فريد للملف
+                $file_name = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $original_name);
                 $file_path = $uploadDir . $file_name;
                 
                 if (move_uploaded_file($tmp_name, $file_path)) {
@@ -129,82 +129,85 @@ function importFromCSV($pdo) {
     }
     
     try {
-        // فتح ملف CSV
-        $handle = fopen($file_tmp, 'r');
-        if (!$handle) {
-            throw new Exception("لا يمكن فتح الملف");
+        // قراءة الملف كاملاً والتعامل مع الترميز
+        $csv_content = file_get_contents($file_tmp);
+        if (!mb_detect_encoding($csv_content, 'UTF-8', true)) {
+            $csv_content = mb_convert_encoding($csv_content, 'UTF-8', 'ISO-8859-1');
         }
         
-        // قراءة العناوين والتحقق منها
-        $headers = fgetcsv($handle);
-        $expected_headers = ['S_NO', 'Item_Code', 'Item_Name', 'Packing', 'Item_Group', 'Brand', 'Featured', 'Image_Name'];
-        
-        // التحقق من صحة العناوين
-        if ($headers !== $expected_headers) {
-            fclose($handle);
-            throw new Exception("ترتيب الأعمدة غير صحيح. يرجى استخدام القالب المرفق.");
-        }
+        // تقسيم المحتوى إلى أسطر
+        $lines = explode("\n", $csv_content);
         
         $imported = 0;
         $updated = 0;
         $errors = 0;
-        $products_map = [];
         $uploaded_images = $_SESSION['uploaded_images'] ?? [];
         
-        // قراءة البيانات من CSV
-        while (($row = fgetcsv($handle)) !== FALSE) {
-            // تخطي الصفوف الفارغة
-            if (empty($row[0]) || count($row) < 2) continue;
+        // تخطي الصف الأول (العناوين)
+        array_shift($lines);
+        
+        $line_number = 1;
+        foreach ($lines as $line) {
+            $line_number++;
+            $line = trim($line);
+            
+            if (empty($line)) continue;
+            
+            // استخدام str_getcsv للتعامل مع الاقتباسات بشكل صحيح
+            $row = str_getcsv($line);
+            
+            // إذا كان عدد الأعمدة أقل من 7، تخطى هذا السطر
+            if (count($row) < 7) {
+                $errors++;
+                continue;
+            }
             
             // تنظيف البيانات
-            $S_NO = trim($row[0]);
-            $Item_Code = trim($row[1]);
+            $S_NO = trim($row[0] ?? '');
+            $Item_Code = trim($row[1] ?? '');
             $Item_Name = trim($row[2] ?? '');
             $Packing = trim($row[3] ?? '');
             $Item_Group = trim($row[4] ?? '');
             $Brand = trim($row[5] ?? '');
             $featured = isset($row[6]) ? (strtolower(trim($row[6])) == 'نعم' || trim($row[6]) == '1' ? 1 : 0) : 0;
-            $image_name = trim($row[7] ?? '');
+            $image_name = isset($row[7]) ? trim($row[7]) : '';
             
             // التحقق من البيانات الأساسية
-            if (empty($S_NO) || empty($Item_Code)) {
+            if (empty($Item_Code) || empty($Item_Name)) {
                 $errors++;
                 continue;
             }
             
-            // إنشاء مفتاح فريد للمنتج
-            $product_key = $S_NO . '_' . $Item_Code;
-            
-            if (!isset($products_map[$product_key])) {
+            try {
                 // التحقق من وجود المنتج مسبقاً
-                $stmt = $pdo->prepare("SELECT id FROM products WHERE S_NO = ? AND Item_Code = ?");
-                $stmt->execute([$S_NO, $Item_Code]);
+                $stmt = $pdo->prepare("SELECT id FROM products WHERE Item_Code = ?");
+                $stmt->execute([$Item_Code]);
                 $existing_product = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($existing_product) {
-                    // تحديث البيانات الحالية
-                    $stmt = $pdo->prepare("UPDATE products SET Item_Name = ?, Packing = ?, Item_Group = ?, Brand = ?, featured = ? WHERE id = ?");
-                    $stmt->execute([$Item_Name, $Packing, $Item_Group, $Brand, $featured, $existing_product['id']]);
+                    // تحديث المنتج الموجود
+                    $stmt = $pdo->prepare("UPDATE products SET S_NO = ?, Item_Name = ?, Packing = ?, Item_Group = ?, Brand = ?, featured = ? WHERE id = ?");
+                    $stmt->execute([$S_NO, $Item_Name, $Packing, $Item_Group, $Brand, $featured, $existing_product['id']]);
                     $product_id = $existing_product['id'];
                     $updated++;
                 } else {
-                    // إضافة المنتج الجديد
+                    // إضافة منتج جديد
                     $stmt = $pdo->prepare("INSERT INTO products (S_NO, Item_Code, Item_Name, Packing, Item_Group, Brand, featured) VALUES (?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([$S_NO, $Item_Code, $Item_Name, $Packing, $Item_Group, $Brand, $featured]);
                     $product_id = $pdo->lastInsertId();
                     $imported++;
                 }
                 
-                $products_map[$product_key] = $product_id;
-                
-                // معالجة الصور
+                // معالجة الصور إذا كان هناك اسم صورة
                 if (!empty($image_name)) {
                     processProductImage($pdo, $product_id, $image_name, $tempDir, $uploadDir);
                 }
+                
+            } catch (PDOException $e) {
+                $errors++;
+                error_log("خطأ في سطر $line_number: " . $e->getMessage());
             }
         }
-        
-        fclose($handle);
         
         // تنظيف المجلد المؤقت بعد الاستيراد
         cleanupTempDirectory($tempDir);
@@ -213,7 +216,12 @@ function importFromCSV($pdo) {
             unset($_SESSION['uploaded_images']);
         }
         
-        $_SESSION['message'] = "تم استيراد $imported منتج جديد وتحديث $updated منتج بنجاح!";
+        $message = "تم استيراد $imported منتج جديد وتحديث $updated منتج بنجاح!";
+        if ($errors > 0) {
+            $message .= " ($errors خطأ)";
+        }
+        
+        $_SESSION['message'] = $message;
         $_SESSION['message_type'] = 'success';
         
     } catch (Exception $e) {
@@ -227,16 +235,27 @@ function importFromCSV($pdo) {
 
 // دالة معالجة صور المنتج
 function processProductImage($pdo, $product_id, $image_name, $tempDir, $uploadDir) {
-    $temp_image_path = $tempDir . $image_name;
-    $final_image_path = $uploadDir . $image_name;
-    
     // البحث عن الصورة في المجلد المؤقت
-    if (file_exists($temp_image_path)) {
+    $temp_files = glob($tempDir . '*');
+    $found_image = null;
+    
+    foreach ($temp_files as $temp_file) {
+        if (strpos(basename($temp_file), $image_name) !== false) {
+            $found_image = $temp_file;
+            break;
+        }
+    }
+    
+    if ($found_image && file_exists($found_image)) {
+        $file_extension = strtolower(pathinfo($found_image, PATHINFO_EXTENSION));
+        $new_filename = uniqid() . '_' . $image_name;
+        $final_image_path = $uploadDir . $new_filename;
+        
         // نسخ الصورة إلى المجلد النهائي
-        if (copy($temp_image_path, $final_image_path)) {
+        if (copy($found_image, $final_image_path)) {
             // التحقق من عدم وجود الصورة مسبقاً
             $stmt = $pdo->prepare("SELECT id FROM product_images WHERE product_id = ? AND image_name = ?");
-            $stmt->execute([$product_id, $image_name]);
+            $stmt->execute([$product_id, $new_filename]);
             
             if ($stmt->rowCount() == 0) {
                 // تحديد إذا كانت هذه الصورة الأولى
@@ -246,9 +265,9 @@ function processProductImage($pdo, $product_id, $image_name, $tempDir, $uploadDi
                 $is_primary = ($result['count'] == 0) ? 1 : 0;
                 
                 $stmt = $pdo->prepare("INSERT INTO product_images (product_id, image_name, is_primary) VALUES (?, ?, ?)");
-                if ($stmt->execute([$product_id, $image_name, $is_primary])) {
+                if ($stmt->execute([$product_id, $new_filename, $is_primary])) {
                     // حذف الصورة من المجلد المؤقت بعد نسخها بنجاح
-                    unlink($temp_image_path);
+                    unlink($found_image);
                     return true;
                 }
             }
@@ -263,7 +282,10 @@ function cleanupTempDirectory($tempDir) {
         $files = glob($tempDir . '*');
         foreach ($files as $file) {
             if (is_file($file)) {
-                unlink($file);
+                // حذف الملفات القديمة (أكثر من ساعة)
+                if (time() - filemtime($file) > 3600) {
+                    unlink($file);
+                }
             }
         }
     }
@@ -596,135 +618,133 @@ function cleanupTempDirectory($tempDir) {
     <div class="dashboard">
         <!-- <?php include 'sidebar.php'; ?> -->
         
-        <!-- المحتوى الرئيسي -->
-        <main class="main-content">
-            <?php include 'admin_navbar.php'; ?>
-            
-            <div class="container">
-                <div class="header-content">
-                    <div>
-                        <h1><i class="fas fa-file-import"></i> استيراد المنتجات</h1>
-                        <p>منصة شاملة لاستيراد المنتجات والصور من ملف Excel</p>
+           <div class="container">
+            <?php include 'admin_navbar.php'; ?> 
+        <div class="header-content">
+            <div>
+                <h1><i class="fas fa-file-import"></i> استيراد المنتجات</h1>
+                <p>منصة شاملة لاستيراد المنتجات والصور من ملف Excel</p>
+            </div>
+            <div>
+                <a href="products.php" class="btn btn-warning">
+                    <i class="fas fa-arrow-right"></i> العودة للمنتجات
+                </a>
+            </div>
+        </div>
+       
+
+        <?php if(isset($_SESSION['message'])): ?>
+            <div class="message <?php echo $_SESSION['message_type'] ?? 'info'; ?>">
+                <?php 
+                echo $_SESSION['message']; 
+                unset($_SESSION['message']);
+                unset($_SESSION['message_type']);
+                ?>
+            </div>
+        <?php endif; ?>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i> تعليمات الاستيراد
+            </div>
+            <div class="card-body">
+                <div class="instructions">
+                    <h3><i class="fas fa-lightbulb"></i> كيف تعمل عملية الاستيراد؟</h3>
+                    <ul>
+                        <li>قم أولاً بتحميل قالب Excel واضبط بيانات المنتجات والصور فيه</li>
+                        <li>ارفع الصور التي ستستخدمها في المنتجات باستخدام الزر المخصص أدناه</li>
+                        <li>استخدم <strong>نفس أسماء الصور</strong> في ملف Excel التي قمت بتحميلها</li>
+                        <li>أخيراً قم برفع ملف Excel ليتم استيراد البيانات والصور تلقائياً</li>
+                        <li>سيتم مطابقة أسماء الصور في Excel مع الصور التي قمت بتحميلها مسبقاً</li>
+                    </ul>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>تحميل القالب</h3>
+                        <p>قم بتحميل قالب Excel واضبط بيانات المنتجات</p>
                     </div>
-                    <div>
-                        <a href="products.php" class="btn btn-warning">
-                            <i class="fas fa-arrow-right"></i> العودة للمنتجات
-                        </a>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>رفع الصور</h3>
+                        <p>ارفع جميع الصور التي ستستخدمها في المنتجات</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>استيراد البيانات</h3>
+                        <p>ارفع ملف Excel ليتم استيراد البيانات تلقائياً</p>
                     </div>
                 </div>
                 
-                <?php if(isset($_SESSION['message'])): ?>
-                    <div class="message <?php echo strpos($_SESSION['message'], 'نجاح') !== false ? 'success' : (strpos($_SESSION['message'], 'خطأ') !== false ? 'error' : 'info'); ?>">
-                        <?php 
-                        echo $_SESSION['message']; 
-                        unset($_SESSION['message']);
-                        ?>
-                    </div>
-                <?php endif; ?>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-info-circle"></i> تعليمات الاستيراد
-                    </div>
-                    <div class="card-body">
-                        <div class="instructions">
-                            <h3><i class="fas fa-lightbulb"></i> كيف تعمل عملية الاستيراد؟</h3>
-                            <ul>
-                                <li>قم أولاً بتحميل قالب Excel واضبط بيانات المنتجات والصور فيه</li>
-                                <li>ارفع الصور التي ستستخدمها في المنتجات باستخدام الزر المخصص أدناه</li>
-                                <li>استخدم <strong>نفس أسماء الصور</strong> في ملف Excel التي قمت بتحميلها</li>
-                                <li>أخيراً قم برفع ملف Excel ليتم استيراد البيانات والصور تلقائياً</li>
-                                <li>سيتم مطابقة أسماء الصور في Excel مع الصور التي قمت بتحميلها مسبقاً</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="steps">
-                            <div class="step">
-                                <div class="step-number">1</div>
-                                <h3>تحميل القالب</h3>
-                                <p>قم بتحميل قالب Excel واضبط بيانات المنتجات</p>
-                            </div>
-                            <div class="step">
-                                <div class="step-number">2</div>
-                                <h3>رفع الصور</h3>
-                                <p>ارفع جميع الصور التي ستستخدمها في المنتجات</p>
-                            </div>
-                            <div class="step">
-                                <div class="step-number">3</div>
-                                <h3>استيراد البيانات</h3>
-                                <p>ارفع ملف Excel ليتم استيراد البيانات تلقائياً</p>
-                            </div>
-                        </div>
-                        
-                      <div class="template-download">
-                            <h3><i class="fas fa-download"></i> قالب Excel الجاهز</h3>
-                            <p>قم بتحميل قالب Excel مسبق الإعداد لضمان التنسيق الصحيح</p>
-                            <a href="import.php?download_template=1" class="btn btn-success" style="margin-top: 15px;">
-                                <i class="fas fa-file-excel"></i> تحميل القالب
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-images"></i> الخطوة 1: رفع الصور مسبقاً
-                    </div>
-                    <div class="card-body">
-                        <form action="" method="POST" enctype="multipart/form-data" id="uploadImagesForm">
-                            <div class="form-group">
-                                <label for="pre_upload_images"><i class="fas fa-upload"></i> اختيار الصور (يمكن اختيار أكثر من صورة)</label>
-                                <input type="file" id="pre_upload_images" name="pre_upload_images[]" multiple accept="image/*">
-                                <p class="help-text" style="margin-top: 10px; color: #666;">
-                                    <i class="fas fa-info-circle"></i> سيتم حفظ هذه الصور مؤقتاً حتى تقوم باستيراد ملف Excel
-                                </p>
-                            </div>
-                            
-                            <div class="image-preview" id="imagePreview"></div>
-                            
-                            <?php if(isset($_SESSION['uploaded_images']) && !empty($_SESSION['uploaded_images'])): ?>
-                                <div class="uploaded-images-list">
-                                    <h4><i class="fas fa-check-circle"></i> الصور التي تم رفعها:</h4>
-                                    <ul>
-                                        <?php foreach($_SESSION['uploaded_images'] as $image): ?>
-                                            <li><i class="fas fa-image"></i> <?php echo $image; ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <button type="submit" class="btn btn-info" name="upload_images">
-                                <i class="fas fa-cloud-upload-alt"></i> رفع الصور
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-file-excel"></i> الخطوة 2: استيراد ملف Excel
-                    </div>
-                    <div class="card-body">
-                        <form action="" method="POST" enctype="multipart/form-data">
-                            <div class="form-group">
-                                <label for="csv_file"><i class="fas fa-file-import"></i> اختيار ملف CSV</label>
-                                <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
-                                <p class="help-text" style="margin-top: 10px; color: #666;">
-                                    <i class="fas fa-exclamation-triangle"></i> تأكد من أن أسماء الصور في ملف CSV تطابق الصور التي قمت برفعها مسبقاً
-                                </p>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-success" name="import_excel">
-                                <i class="fas fa-file-import"></i> بدء الاستيراد
-                            </button>
-                        </form>
-                    </div>
+                <div class="template-download">
+                    <h3><i class="fas fa-download"></i> قالب Excel الجاهز</h3>
+                    <p>قم بتحميل قالب Excel مسبق الإعداد لضمان التنسيق الصحيح</p>
+                    <a href="import.php?download_template=1" class="btn btn-success" style="margin-top: 15px;">
+                        <i class="fas fa-file-excel"></i> تحميل القالب
+                    </a>
                 </div>
             </div>
-        </main>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-images"></i> الخطوة 1: رفع الصور مسبقاً
+            </div>
+            <div class="card-body">
+                <form action="" method="POST" enctype="multipart/form-data" id="uploadImagesForm">
+                    <div class="form-group">
+                        <label for="pre_upload_images"><i class="fas fa-upload"></i> اختيار الصور (يمكن اختيار أكثر من صورة)</label>
+                        <input type="file" id="pre_upload_images" name="pre_upload_images[]" multiple accept="image/*" required>
+                        <p class="help-text" style="margin-top: 10px; color: #666;">
+                            <i class="fas fa-info-circle"></i> سيتم حفظ هذه الصور مؤقتاً حتى تقوم باستيراد ملف Excel
+                        </p>
+                    </div>
+                    
+                    <div class="image-preview" id="imagePreview"></div>
+                    
+                    <?php if(isset($_SESSION['uploaded_images']) && !empty($_SESSION['uploaded_images'])): ?>
+                        <div class="uploaded-images-list">
+                            <h4><i class="fas fa-check-circle"></i> الصور التي تم رفعها:</h4>
+                            <ul>
+                                <?php foreach($_SESSION['uploaded_images'] as $image): ?>
+                                    <li><i class="fas fa-image"></i> <?php echo $image; ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <button type="submit" class="btn btn-info" name="upload_images">
+                        <i class="fas fa-cloud-upload-alt"></i> رفع الصور
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-file-excel"></i> الخطوة 2: استيراد ملف Excel
+            </div>
+            <div class="card-body">
+                <form action="" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="csv_file"><i class="fas fa-file-import"></i> اختيار ملف CSV</label>
+                        <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
+                        <p class="help-text" style="margin-top: 10px; color: #666;">
+                            <i class="fas fa-exclamation-triangle"></i> تأكد من أن أسماء الصور في ملف CSV تطابق الصور التي قمت برفعها مسبقاً
+                        </p>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success" name="import_excel">
+                        <i class="fas fa-file-import"></i> بدء الاستيراد
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
     </div>
     
-    <script>
+        <script>
         // معاينة الصور قبل الرفع
         document.getElementById('pre_upload_images').addEventListener('change', function(e) {
             const preview = document.getElementById('imagePreview');

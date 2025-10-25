@@ -53,7 +53,7 @@ $stmt = $pdo->prepare("
     WHERE product_id = ? 
     ORDER BY is_primary DESC, id ASC
 ");
-$stmt->execute([$product_id]);
+
 $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 

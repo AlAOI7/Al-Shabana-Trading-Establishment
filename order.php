@@ -22,18 +22,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
     $notes = $_POST['notes'];
     $product_id = $_POST['product_id'];
     
-    // حفظ الطلب في قاعدة البيانات
+    // حفظ الطلب في قاعدة البيانات - معدل ليناسب هيكل جدول الطلبات
     $stmt = $pdo->prepare("
-        INSERT INTO orders (product_id, customer_name, customer_email, customer_phone, quantity, notes, order_date) 
-        VALUES (?, ?, ?, ?, ?, ?, NOW())
+        INSERT INTO orders (user_id, total_amount, status, shipping_address, notes) 
+        VALUES (?, ?, ?, ?, ?)
     ");
-    $stmt->execute([$product_id, $name, $email, $phone, $quantity, $notes]);
+    
+    // في حالة عدم وجود نظام مستخدمين، يمكن استخدام 0 أو NULL
+    $user_id = NULL;
+    $total_amount = 0; // يمكنك حساب المبلغ بناءً على سعر المنتج والكمية
+    $status = 'pending';
+    $shipping_address = "طلب منتج: " . ($product['name'] ?? 'منتج');
+    
+    $stmt->execute([$user_id, $total_amount, $status, $shipping_address, $notes]);
     
     $_SESSION['order_success'] = "تم تقديم طلبك بنجاح! سنتواصل معك قريباً.";
-    header("Location: order_success.php");
+    header("Location: " . $_SERVER['PHP_SELF'] . "?product_id=" . $product_id . "&success=1");
     exit();
 }
+
+// جلب جميع الطلبات - بدون تصفية حسب المنتج لأن الجدول لا يحتوي على product_id
+$orders_stmt = $pdo->query("
+    SELECT * FROM orders 
+    ORDER BY created_at DESC
+");
+$orders = $orders_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
  <style>
         :root {
@@ -312,29 +327,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
             </div>
             
             <!-- نموذج الطلب -->
+            <!-- نموذج الطلب -->
             <div class="order-form">
-                <h2 class="form-title">معلومات الطلب</h2>
+                <h2 class="form-title"><i class="fas fa-clipboard-list"></i> معلومات الطلب</h2>
                 
                 <form method="POST" action="">
                     <input type="hidden" name="product_id" value="<?php echo $product_id; ?>">
                     
                     <div class="form-group">
-                        <label for="name">الاسم الكامل *</label>
-                        <input type="text" id="name" name="name" required>
+                        <label for="name"><i class="fas fa-user"></i> الاسم الكامل *</label>
+                        <input type="text" id="name" name="name" required placeholder="أدخل اسمك الكامل">
                     </div>
                     
                     <div class="form-group">
-                        <label for="email">البريد الإلكتروني *</label>
-                        <input type="email" id="email" name="email" required>
+                        <label for="email"><i class="fas fa-envelope"></i> البريد الإلكتروني *</label>
+                        <input type="email" id="email" name="email" required placeholder="example@email.com">
                     </div>
                     
                     <div class="form-group">
-                        <label for="phone">رقم الهاتف *</label>
-                        <input type="tel" id="phone" name="phone" required>
+                        <label for="phone"><i class="fas fa-phone"></i> رقم الهاتف *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="05XXXXXXXX">
                     </div>
                     
                     <div class="form-group">
-                        <label for="quantity">الكمية المطلوبة *</label>
+                        <label for="quantity"><i class="fas fa-box"></i> الكمية المطلوبة *</label>
                         <select id="quantity" name="quantity" required>
                             <option value="">اختر الكمية</option>
                             <option value="1">1</option>
@@ -351,7 +367,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                     </div>
                     
                     <div class="form-group">
-                        <label for="notes">ملاحظات إضافية</label>
+                        <label for="notes"><i class="fas fa-sticky-note"></i> ملاحظات إضافية</label>
                         <textarea id="notes" name="notes" rows="4" placeholder="أي ملاحظات إضافية حول الطلب..."></textarea>
                     </div>
                     
@@ -365,6 +381,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                     </div>
                 </form>
             </div>
+        </div>
+
         </div>
         <?php else: ?>
             <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">

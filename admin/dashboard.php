@@ -22,41 +22,27 @@ $total_orders = $stmt->fetch()['total_orders'];
 $stmt = $pdo->query("SELECT SUM(total_amount) as total_revenue FROM orders WHERE status = 'completed'");
 $total_revenue = $stmt->fetch()['total_revenue'] ?: 0;
 
-// آخر الطلبات
-$stmt = $pdo->query("SELECT o.*, u.full_name FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC LIMIT 5");
+// آخر الطلبات مع معلومات أكثر
+$stmt = $pdo->query("SELECT o.*, u.full_name, u.email 
+                     FROM orders o 
+                     JOIN users u ON o.user_id = u.id 
+                     ORDER BY o.created_at DESC LIMIT 5");
 $recent_orders = $stmt->fetchAll();
 
 // آخر المستخدمين المسجلين
 $stmt = $pdo->query("SELECT * FROM users WHERE user_type = 'client' ORDER BY created_at DESC LIMIT 5");
 $recent_users = $stmt->fetchAll();
 
-// بيانات للرسوم البيانية
-// 1. توزيع الطلبات حسب الحالة
-$stmt = $pdo->query("SELECT status, COUNT(*) as count FROM orders GROUP BY status");
-$order_statuses = $stmt->fetchAll();
-
-// 2. الإيرادات الشهرية (آخر 6 أشهر)
-$stmt = $pdo->query("SELECT 
-    DATE_FORMAT(created_at, '%Y-%m') as month,
-    SUM(total_amount) as revenue
-    FROM orders 
-    WHERE status = 'completed' 
-    AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-    ORDER BY month DESC LIMIT 6");
-$monthly_revenue = $stmt->fetchAll();
-
-// 3. نمو المستخدمين (آخر 6 أشهر)
-$stmt = $pdo->query("SELECT 
-    DATE_FORMAT(created_at, '%Y-%m') as month,
-    COUNT(*) as user_count
-    FROM users 
-    WHERE user_type = 'client'
-    AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-    ORDER BY month DESC LIMIT 6");
-$user_growth = $stmt->fetchAll();
+// بيانات إضافية للنشاطات
+$stmt = $pdo->query("SELECT 'order' as type, created_at, 'طلب جديد' as activity, id FROM orders 
+                     UNION ALL 
+                     SELECT 'user' as type, created_at, 'مستخدم جديد' as activity, id FROM users 
+                     WHERE user_type = 'client'
+                     ORDER BY created_at DESC LIMIT 10");
+$recent_activities = $stmt->fetchAll();
 ?>
+
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -632,31 +618,55 @@ $user_growth = $stmt->fetchAll();
                 </div>
                 
                 <!-- آخر النشاطات -->
+              
+                    <!-- آخر النشاطات - نسخة محسنة -->
                 <div class="card">
                     <div class="card-header">
                         <h3><i class="fas fa-history"></i> <span data-translate="recent_activities">آخر النشاطات</span></h3>
                     </div>
                     <div class="card-body">
-                        <?php if(count($recent_orders) > 0): ?>
+                        <?php if(count($recent_activities) > 0): ?>
                             <div style="max-height: 300px; overflow-y: auto;">
-                                <?php foreach($recent_orders as $order): ?>
-                                    <div style="display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid #f1f5f9;">
-                                        <div>
-                                            <strong data-translate="new_order">طلب جديد</strong>
-                                            <p style="margin: 0.2rem 0; font-size: 0.9rem;" data-translate="from">من <?php echo $order['full_name']; ?></p>
+                                <?php foreach($recent_activities as $activity): ?>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid #f1f5f9;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 40px; height: 40px; border-radius: 50%; background: <?php echo $activity['type'] == 'order' ? '#e3f2fd' : '#f3e5f5'; ?>; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas <?php echo $activity['type'] == 'order' ? 'fa-shopping-cart' : 'fa-user-plus'; ?>" 
+                                                style="color: <?php echo $activity['type'] == 'order' ? '#1976d2' : '#7b1fa2'; ?>;"></i>
+                                            </div>
+                                            <div>
+                                                <strong data-translate="<?php echo $activity['type'] == 'order' ? 'new_order' : 'new_user'; ?>">
+                                                    <?php echo $activity['activity']; ?>
+                                                </strong>
+                                                <p style="margin: 0.2rem 0; font-size: 0.9rem; color: #64748b;">
+                                                    <?php if($activity['type'] == 'order'): ?>
+                                                        رقم الطلب: #<?php echo $activity['id']; ?>
+                                                    <?php else: ?>
+                                                        رقم المستخدم: #<?php echo $activity['id']; ?>
+                                                    <?php endif; ?>
+                                                </p>
+                                            </div>
                                         </div>
                                         <div style="text-align: left;">
-                                            <span class="badge badge-success" data-translate="new">جديد</span>
-                                            <p style="margin: 0.2rem 0; font-size: 0.8rem; color: #64748b;"><?php echo date('Y-m-d', strtotime($order['created_at'])); ?></p>
+                                            <span class="badge badge-<?php echo $activity['type'] == 'order' ? 'success' : 'info'; ?>" 
+                                                data-translate="<?php echo $activity['type'] == 'order' ? 'new' : 'active'; ?>">
+                                                <?php echo $activity['type'] == 'order' ? 'جديد' : 'نشط'; ?>
+                                            </span>
+                                            <p style="margin: 0.2rem 0; font-size: 0.8rem; color: #64748b;">
+                                                <?php echo date('Y-m-d H:i', strtotime($activity['created_at'])); ?>
+                                            </p>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
                         <?php else: ?>
-                            <p style="text-align: center; color: #64748b; padding: 1rem;" data-translate="no_recent_activities">لا توجد نشاطات حديثة</p>
+                            <p style="text-align: center; color: #64748b; padding: 1rem;" data-translate="no_recent_activities">
+                                لا توجد نشاطات حديثة
+                            </p>
                         <?php endif; ?>
                     </div>
                 </div>
+
             </div>
 
             <!-- الرسوم البيانية -->
@@ -698,40 +708,87 @@ $user_growth = $stmt->fetchAll();
                 </div>
             </div>
                 <!-- قسم إضافي للمستخدمين الجدد -->
-            <div class="card" style="margin-top: 2.5rem;">
-                <div class="card-header">
-                    <h3><i class="fas fa-user-plus"></i> آخر العملاء المسجلين</h3>
-                </div>
-                <div class="card-body">
-                    <?php if(count($recent_users) > 0): ?>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>الاسم</th>
-                                        <th>البريد الإلكتروني</th>
-                                        <th>تاريخ التسجيل</th>
-                                        <th>الحالة</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach($recent_users as $user): ?>
+       
+                            <!-- قسم إضافي للمستخدمين الجدد - نسخة محسنة -->
+                <div class="card" style="margin-top: 2.5rem;">
+                    <div class="card-header">
+                        <h3><i class="fas fa-user-plus"></i> <span data-translate="recent_clients">آخر العملاء المسجلين</span></h3>
+                    </div>
+                    <div class="card-body">
+                        <?php if(count($recent_users) > 0): ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
                                         <tr>
-                                            <td><?php echo $user['full_name']; ?></td>
-                                            <td><?php echo $user['email']; ?></td>
-                                            <td><?php echo date('Y-m-d', strtotime($user['created_at'])); ?></td>
-                                            <td><span class="badge badge-success">نشط</span></td>
+                                            <th data-translate="name">الاسم</th>
+                                            <th data-translate="email">البريد الإلكتروني</th>
+                                            <th data-translate="phone">الهاتف</th>
+                                            <th data-translate="registration_date">تاريخ التسجيل</th>
+                                            <th data-translate="status">الحالة</th>
                                         </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php else: ?>
-                        <p style="text-align: center; color: #64748b; padding: 1rem;">لا يوجد عملاء مسجلين حديثاً</p>
-                    <?php endif; ?>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach($recent_users as $user): ?>
+                                            <tr>
+                                                <td>
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #e3f2fd; display: flex; align-items: center; justify-content: center;">
+                                                            <i class="fas fa-user" style="color: #1976d2; font-size: 0.8rem;"></i>
+                                                        </div>
+                                                        <?php echo htmlspecialchars($user['full_name']); ?>
+                                                    </div>
+                                                </td>
+                                                <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                                <td><?php echo !empty($user['phone']) ? htmlspecialchars($user['phone']) : '<span style="color: #999;">غير محدد</span>'; ?></td>
+                                                <td>
+                                                    <span style="font-size: 0.85rem;">
+                                                        <?php echo date('Y-m-d', strtotime($user['created_at'])); ?>
+                                                    </span>
+                                                    <br>
+                                                    <span style="font-size: 0.75rem; color: #64748b;">
+                                                        <?php echo date('H:i', strtotime($user['created_at'])); ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <?php 
+                                                    $status_class = 'success';
+                                                    $status_text = 'نشط';
+                                                    
+                                                    if(isset($user['is_active']) && $user['is_active'] == 0) {
+                                                        $status_class = 'secondary';
+                                                        $status_text = 'غير نشط';
+                                                    } elseif(isset($user['email_verified']) && $user['email_verified'] == 0) {
+                                                        $status_class = 'warning';
+                                                        $status_text = 'بانتظار التفعيل';
+                                                    }
+                                                    ?>
+                                                    <span class="badge badge-<?php echo $status_class; ?>">
+                                                        <?php echo $status_text; ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div style="text-align: left; margin-top: 1rem;">
+                                <a href="users.php" class="btn btn-outline-primary btn-sm" data-translate="view_all">
+                                    عرض جميع العملاء
+                                </a>
+                            </div>
+                        <?php else: ?>
+                            <div style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-users" style="font-size: 3rem; color: #e2e8f0; margin-bottom: 1rem;"></i>
+                                <p style="color: #64748b; margin-bottom: 1rem;" data-translate="no_recent_clients">
+                                    لا يوجد عملاء مسجلين حديثاً
+                                </p>
+                                <a href="users.php?action=add" class="btn btn-primary" data-translate="add_first_client">
+                                    إضافة أول عميل
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            </div>
-
             <!-- تذييل الصفحة -->
             <div class="footer">
                 <p>جميع الحقوق محفوظة &copy; <?php echo date('Y'); ?> - نظام الإدارة</p>
